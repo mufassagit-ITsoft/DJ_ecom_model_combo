@@ -1,0 +1,180 @@
+<style>
+    /* Nested submenu styles */
+    .dropdown-submenu {
+        position: relative;
+    }
+
+    .dropdown-submenu .dropdown-menu {
+        top: 0;
+        left: 100%;
+        margin-top: -2px;
+        display: none;
+    }
+
+    .dropdown-submenu:hover > .dropdown-menu,
+    .dropdown-submenu.show > .dropdown-menu {
+        display: block;
+    }
+
+    .dropdown-submenu > a::after {
+        display: inline-block;
+        margin-left: auto;
+        float: right;
+        margin-top: 5px;
+        border-top: 4px solid transparent;
+        border-bottom: 4px solid transparent;
+        border-left: 4px solid currentColor;
+        content: "";
+    }
+</style>
+
+<nav class="navbar navbar-expand-lg bg-primary justify-content-center">
+
+    <a class="navbar-brand main-heading text-white" href="{% url 'store' %}">
+        &nbsp; &nbsp; Gamestore
+    </a>
+
+    <button
+        class="navbar-toggler"
+        type="button"
+        data-toggle="collapse"
+        data-target="#navbarNavDropdown"
+        aria-controls="navbarNavDropdown"
+        aria-expanded="false"
+        aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+
+        <ul class="navbar-nav me-auto mb-2 mb-md-0">
+
+            {% for item in all_topics_with_categories %}
+            <!-- Top-level dropdown: one per Topic (e.g. "Video Games", "TCG") -->
+            <li class="nav-item dropdown">
+
+                <a class="nav-link dropdown-toggle text-white" href="#"
+                   id="topicDropdown{{ forloop.counter }}"
+                   role="button"
+                   data-bs-toggle="dropdown"
+                   aria-expanded="false">
+                    {{ item.topic.name | capfirst }}
+                </a>
+
+                <ul class="dropdown-menu" aria-labelledby="topicDropdown{{ forloop.counter }}">
+
+                    <!-- Link to the full topic page (all products in this topic) -->
+                    <li>
+                        <a class="dropdown-item" href="{% url 'list-topic' item.topic.slug %}">
+                            <i class="fa fa-list me-2" aria-hidden="true"></i>
+                            All {{ item.topic.name | capfirst }}
+                        </a>
+                    </li>
+
+                    <li><hr class="dropdown-divider"></li>
+
+                    <!-- Categories belonging to this topic as direct links -->
+                    {% for category in item.categories %}
+                    <li>
+                        <a class="dropdown-item" href="{% url 'list-category' category.slug %}">
+                            {{ category.name | capfirst }}
+                        </a>
+                    </li>
+                    {% empty %}
+                    <li>
+                        <span class="dropdown-item text-muted fst-italic">No categories yet</span>
+                    </li>
+                    {% endfor %}
+
+                </ul>
+
+            </li>
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
+    <div class="collapse navbar-collapse text-center" id="navbarNavDropdown">
+
+        <ul class="navbar-nav ms-auto">
+
+            {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="btn btn-alert navbar-btn text-white" type="button" href="{% url 'dashboard' %}">
+                        <i class="fa fa-home" aria-hidden="true"></i> &nbsp; Dashboard
+                    </a>
+                </li>
+            {% else %}
+                <li class="nav-item">
+                    <a class="btn btn-alert navbar-btn text-white" type="button" href="{% url 'register' %}">Register</a>
+                </li>
+            {% endif %}
+
+            {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="btn btn-alert navbar-btn text-white" type="button" href="{% url 'user-logout' %}">
+                        <i class="fa fa-sign-out" aria-hidden="true"></i> &nbsp; Logout
+                    </a>
+                </li>
+            {% else %}
+                <li class="nav-item">
+                    <a class="btn btn-alert navbar-btn text-white" type="button" href="{% url 'my-login' %}">Login</a>
+                </li>
+            {% endif %}
+
+            &nbsp; &nbsp; &nbsp;
+
+            <li class="nav-item">
+                <a type="button" role="button" href="{% url 'cart-summary' %}" class="btn btn-outline-secondary">
+                    <i class="fa fa-shopping-cart" aria-hidden="true"></i>
+                    &nbsp;
+                    <div id="cart-qty" class="d-inline-flex">
+                        {% with qty_amount=cart|length %}
+                            {% if qty_amount > 0 %}{{ qty_amount }}{% else %}0{% endif %}
+                        {% endwith %}
+                    </div>
+                </a>
+            </li>
+
+            &nbsp; &nbsp; &nbsp;
+
+        </ul>
+
+    </div>
+
+    <!-- Search Bar -->
+    <form class="d-flex" role="search" method="GET" action="{% url 'search-products' %}" id="search-form">
+        <div class="input-group">
+            <input class="form-control" type="search" name="q" id="search-input"
+                   placeholder="Search products..." aria-label="Search"
+                   value="{{ query }}" autocomplete="off">
+            <button class="btn btn-outline-light" type="submit">
+                <i class="fa fa-search" aria-hidden="true"></i>
+            </button>
+        </div>
+    </form>
+    <div id="search-suggestions" class="search-suggestions" style="display: none;"></div>
+
+</nav>
+
+<script>
+    // Enable submenu click toggle for mobile fallback
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.dropdown-submenu > a').forEach(function (el) {
+            el.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const submenu = this.nextElementSibling;
+                const isShown = this.parentElement.classList.contains('show');
+                // Close all open submenus first
+                document.querySelectorAll('.dropdown-submenu.show').forEach(function (open) {
+                    open.classList.remove('show');
+                });
+                if (!isShown) {
+                    this.parentElement.classList.add('show');
+                }
+            });
+        });
+    });
+</script>

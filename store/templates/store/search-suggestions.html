@@ -1,0 +1,22 @@
+{% if products %}
+    {% for product in products %}
+    <div class="suggestion-item" onclick="window.location.href='{{ product.get_absolute_url }}'">
+        <img src="{{ product.image.url }}" alt="{{ product.title }}">
+        <div class="suggestion-text">
+            <div><strong>{{ product.title }}</strong></div>
+            <div class="text-muted small">{{ product.brand }}</div>
+        </div>
+        <div class="suggestion-price">${{ product.price }}</div>
+    </div>
+    {% endfor %}
+    <div class="suggestion-item" style="background-color: #f8f9fa; text-align: center; border-top: 2px solid #dee2e6;">
+        <a href="{% url 'search-products' %}?q={{ query }}" style="text-decoration: none; color: #007bff; font-weight: bold;">
+            View all results for "{{ query }}"
+        </a>
+    </div>
+{% else %}
+    <div class="no-results">
+        <i class="fa fa-search" aria-hidden="true"></i>
+        <p>No products found for "{{ query }}"</p>
+    </div>
+{% endif %}

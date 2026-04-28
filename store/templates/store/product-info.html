@@ -1,0 +1,140 @@
+{% extends "./base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+<div class="container">
+    <main class="pt-5">
+        <div class="row g-3">
+            <div class="col-md-5 col-lg-5 order-md-first bg-light">
+                <img class="img-fluid mx-auto d-block" alt="Responsive image" src="{{ product.image.url }}">
+            </div>
+            <div class="col-md-7 col-lg-7 ps-md-3 ps-lg-5">
+                <h1 class="mb-0 h4"> {{ product.title }}  </h1>
+                <strong> {{ product.brand }} </strong>
+                <hr>
+                <br>
+                <p> {{ product.description }} </p>
+                
+                <!-- Stock Status Display -->
+                <div class="alert {% if product.quantity_available > 10 %}alert-success{% elif product.quantity_available > 0 %}alert-warning{% else %}alert-danger{% endif %}" role="alert">
+                    {% if product.quantity_available > 10 %}
+                        <i class="fa fa-check-circle" aria-hidden="true"></i> In Stock ({{ product.quantity_available }} available)
+                    {% elif product.quantity_available > 0 %}
+                        <i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Only {{ product.quantity_available }} left in stock!
+                    {% else %}
+                        <i class="fa fa-times-circle" aria-hidden="true"></i> Out of Stock
+                    {% endif %}
+                </div>
+                
+                <div class="border">
+                    <div class="col border-bottom">
+                        <div class="row p-3">
+                            <div class="col-6"> Price </div>
+                            <div class="col-6 text-end"><span class="h4 fw-bold">$ {{ product.price }} </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <div class="row p-3">
+                            <div class="col-6">
+                                <label for="select">Qty</label>
+                                &nbsp; 
+                                <select id="select" {% if product.quantity_available == 0 %}disabled{% endif %}>
+                                    {% if product.quantity_available > 0 %}
+                                        {% for i in "1234" %}
+                                            {% if forloop.counter <= product.quantity_available %}
+                                                <option value="{{ forloop.counter }}">{{ forloop.counter }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <option value="0">0</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+
+                            <div class="col-6 text-end">
+                                <button type="button" 
+                                        id="add-button" 
+                                        value="{{product.id}}" 
+                                        class="btn btn-secondary btn-sm"
+                                        {% if product.quantity_available == 0 %}disabled{% endif %}>
+                                    <i class="fa fa-plus" aria-hidden="true"></i> &nbsp; 
+                                    {% if product.quantity_available == 0 %}
+                                        Out of Stock
+                                    {% else %}
+                                        Add to cart
+                                    {% endif %}
+                                </button> 
+                            </div>
+                        </div>
+                        
+                        <!-- Error/Success Message Display -->
+                        <div id="cart-message" class="mt-2" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <br>
+</div>
+
+
+<script>
+    // Add button with error handling
+    $(document).on('click', '#add-button', function(e){
+        e.preventDefault();
+        
+        $.ajax({
+            type: 'POST',
+            url: '{% url "cart-add" %}',
+            data: {
+                product_id: $('#add-button').val(),
+                product_quantity: $('#select option:selected').text(),
+                csrfmiddlewaretoken: "{{csrf_token}}",
+                action: 'post'
+            },
+            success: function(json){
+                if (json.error) {
+                    // Show error message
+                    $('#cart-message')
+                        .removeClass('alert-success')
+                        .addClass('alert alert-danger')
+                        .text(json.message)
+                        .show();
+                    
+                    // Hide message after 5 seconds
+                    setTimeout(function() {
+                        $('#cart-message').fadeOut();
+                    }, 5000);
+                } else {
+                    // Update cart quantity
+                    document.getElementById("cart-qty").textContent = json.qty;
+                    
+                    // Show success message
+                    $('#cart-message')
+                        .removeClass('alert-danger')
+                        .addClass('alert alert-success')
+                        .text(json.message)
+                        .show();
+                    
+                    // Hide message after 3 seconds
+                    setTimeout(function() {
+                        $('#cart-message').fadeOut();
+                    }, 3000);
+                }
+            },
+            error: function(xhr, errmsg, err){
+                $('#cart-message')
+                    .removeClass('alert-success')
+                    .addClass('alert alert-danger')
+                    .text('An error occurred. Please try again.')
+                    .show();
+            }
+        });
+    })
+</script>
+
+{% endblock %}
