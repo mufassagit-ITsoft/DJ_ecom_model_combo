@@ -1,0 +1,10 @@
+asgiref==3.11.0
+crispy-bootstrap5==2025.6
+Django==6.0
+django-crispy-forms==2.5
+django-mathfilters==1.0.0
+django-six==1.0.5
+pillow==12.0.0
+python-decouple==3.8
+six==1.17.0
+sqlparse==0.5.4
