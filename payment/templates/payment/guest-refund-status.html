@@ -1,0 +1,268 @@
+{% include "store/base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+<style>
+    body {
+        background-color: gray;
+    }
+    
+    .status-card {
+        background-color: white;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .status-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    
+    .status-badge {
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-weight: bold;
+        display: inline-block;
+        font-size: 14px;
+    }
+    
+    .status-pending_return { background-color: #ffc107; color: #000; }
+    .status-product_received { background-color: #17a2b8; color: white; }
+    .status-processing_refund { background-color: #007bff; color: white; }
+    .status-completed { background-color: #28a745; color: white; }
+    .status-rejected { background-color: #dc3545; color: white; }
+    .status-cancelled { background-color: #6c757d; color: white; }
+    
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+    }
+    
+    .timeline-item:before {
+        content: '';
+        position: absolute;
+        left: -23px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #ddd;
+    }
+    
+    .timeline-item.active:before {
+        background-color: #28a745;
+    }
+    
+    .timeline-item.current:before {
+        background-color: #007bff;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+    }
+    
+    .refund-items {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+    }
+</style>
+
+<body>
+    <br>
+
+    <!-- Status Header -->
+    <div class="container status-header shadow-lg">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h3><i class="fa fa-undo" aria-hidden="true"></i> Refund Request #{{ refund.id }}</h3>
+                <p class="mb-0">Order #{{ refund.order.id }} | Guest Checkout</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="status-badge status-{{ refund.status|lower }}">
+                    {{ refund.get_status_display }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Important Notice -->
+    <div class="container">
+        <div class="alert alert-info">
+            <i class="fa fa-bookmark" aria-hidden="true"></i>
+            <strong>Save This Information:</strong> Your Refund Request ID is <strong>#{{ refund.id }}</strong>. 
+            You'll need this and your email address to check your refund status in the future.
+        </div>
+    </div>
+
+    <!-- Refund Details -->
+    <div class="container status-card shadow-md">
+        <h4><i class="fa fa-info-circle" aria-hidden="true"></i> Refund Details</h4>
+        <hr>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Customer Name:</strong> {{ refund.customer_name }}</p>
+                <p><strong>Customer Email:</strong> {{ refund.customer_email }}</p>
+                <p><strong>Refund Amount:</strong> ${{ refund.refund_amount|floatformat:2 }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Reason:</strong> {{ refund.get_reason_display }}</p>
+                <p><strong>Submitted:</strong> {{ refund.created_at|date:"F d, Y - g:i A" }}</p>
+                {% if refund.tracking_number %}
+                <p><strong>Tracking Number:</strong> {{ refund.tracking_number }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if refund.reason_details %}
+        <div class="mt-3">
+            <strong>Additional Details:</strong>
+            <p class="text-muted">{{ refund.reason_details }}</p>
+        </div>
+        {% endif %}
+
+        {% if refund.rejection_reason %}
+        <div class="alert alert-danger mt-3">
+            <strong><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Rejection Reason:</strong><br>
+            {{ refund.rejection_reason }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Items Being Refunded -->
+    <div class="container status-card shadow-md">
+        <h4><i class="fa fa-list" aria-hidden="true"></i> Items Being Refunded</h4>
+        <hr>
+        
+        <div class="refund-items">
+            {% for item in refund_items %}
+            <div class="mb-3 pb-3 border-bottom">
+                <strong>{{ item.order_item.product.title }}</strong><br>
+                Quantity: {{ item.quantity_to_refund }} | 
+                Refund Amount: ${{ item.refund_amount|floatformat:2 }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Refund Timeline -->
+    <div class="container status-card shadow-md">
+        <h4><i class="fa fa-clock-o" aria-hidden="true"></i> Refund Progress</h4>
+        <hr>
+        
+        <div class="timeline">
+            <div class="timeline-item {% if refund.status == 'PENDING_RETURN' %}current{% else %}active{% endif %}">
+                <strong>1. Request Submitted</strong><br>
+                <small class="text-muted">{{ refund.created_at|date:"F d, Y - g:i A" }}</small>
+                {% if refund.status == 'PENDING_RETURN' %}
+                <p class="mb-0 mt-2">
+                    Your refund request has been received. Please ship the product back to us using the address below.
+                </p>
+                {% else %}
+                <p class="mb-0 mt-2 text-success">✓ Request submitted successfully</p>
+                {% endif %}
+            </div>
+            
+            <div class="timeline-item {% if refund.status == 'PRODUCT_RECEIVED' %}current{% elif refund.status in 'PROCESSING_REFUND,COMPLETED' %}active{% endif %}">
+                <strong>2. Product Received</strong><br>
+                {% if refund.product_received_at %}
+                <small class="text-muted">{{ refund.product_received_at|date:"F d, Y - g:i A" }}</small>
+                <p class="mb-0 mt-2 text-success">✓ We've received your return and verified the product condition.</p>
+                {% else %}
+                <small class="text-muted">Waiting for product return...</small>
+                <p class="mb-0 mt-2">We'll process your refund once we receive your return shipment.</p>
+                {% endif %}
+            </div>
+            
+            <div class="timeline-item {% if refund.status == 'PROCESSING_REFUND' %}current{% elif refund.status == 'COMPLETED' %}active{% endif %}">
+                <strong>3. Processing Refund</strong><br>
+                {% if refund.status in 'PROCESSING_REFUND,COMPLETED' %}
+                <small class="text-muted">In progress...</small>
+                <p class="mb-0 mt-2">Your refund is being processed through PayPal.</p>
+                {% else %}
+                <small class="text-muted">Pending</small>
+                {% endif %}
+            </div>
+            
+            <div class="timeline-item {% if refund.status == 'COMPLETED' %}active{% endif %}">
+                <strong>4. Refund Completed</strong><br>
+                {% if refund.refund_completed_at %}
+                <small class="text-muted">{{ refund.refund_completed_at|date:"F d, Y - g:i A" }}</small>
+                <p class="mb-0 mt-2 text-success">
+                    ✓ Your refund of ${{ refund.refund_amount|floatformat:2 }} has been processed to your PayPal account.
+                </p>
+                {% else %}
+                <small class="text-muted">Pending</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Return Shipping Info -->
+    {% if refund.status == 'PENDING_RETURN' %}
+    <div class="container status-card shadow-md">
+        <h5><i class="fa fa-truck" aria-hidden="true"></i> Return Shipping Instructions</h5>
+        <hr>
+        
+        <div class="alert alert-warning">
+            <strong>Please ship your product to:</strong><br><br>
+            <strong>Gamestore Returns Department</strong><br>
+            [Your Business Address]<br>
+            [City, State ZIP]<br>
+            <br>
+            <strong>Important:</strong>
+            <ul class="mb-0">
+                <li>Include a note with your Order ID: <strong>#{{ refund.order.id }}</strong></li>
+                <li>Include a note with your Refund Request ID: <strong>#{{ refund.id }}</strong></li>
+                <li>Package items securely to prevent damage during shipping</li>
+                <li>We recommend using tracked shipping and keeping your receipt</li>
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Check Status Again -->
+    <div class="container status-card shadow-md">
+        <h5><i class="fa fa-question-circle" aria-hidden="true"></i> Check Status Again</h5>
+        <p>To check your refund status in the future, you'll need:</p>
+        <ul>
+            <li><strong>Refund Request ID:</strong> #{{ refund.id }}</li>
+            <li><strong>Email Address:</strong> {{ refund.customer_email }}</li>
+        </ul>
+        
+        <a href="{% url 'guest-refund-request' %}" class="btn btn-primary">
+            <i class="fa fa-undo" aria-hidden="true"></i> Submit Another Refund Request
+        </a>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="container status-card shadow-md">
+        <h5><i class="fa fa-envelope" aria-hidden="true"></i> Need Help?</h5>
+        <p>If you have questions about your refund, please contact our support team:</p>
+        <ul class="mb-0">
+            <li>Email: support@gamestore.com</li>
+            <li>Reference your Refund Request ID: <strong>#{{ refund.id }}</strong></li>
+            <li>Reference your Order ID: <strong>#{{ refund.order.id }}</strong></li>
+        </ul>
+    </div>
+
+    <br>
+</body>
+
+{% endblock %}

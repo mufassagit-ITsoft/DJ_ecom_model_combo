@@ -1,0 +1,414 @@
+{% include "store/base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+<style>
+    body {
+        background-color: gray;
+    }
+    
+    .checkout-container {
+        background-color: white;
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: 20px auto;
+    }
+    
+    /* Rewards Section Styling */
+    .rewards-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .rewards-balance {
+        font-size: 32px;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    
+    .rewards-input-group {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        color: #333;
+        margin-top: 15px;
+    }
+    
+    .apply-rewards-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 10px;
+    }
+    
+    .apply-rewards-btn:hover {
+        background: #218838;
+    }
+    
+    .order-summary {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .order-line {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    
+    .order-line.total {
+        font-size: 20px;
+        font-weight: bold;
+        border-top: 2px solid #dee2e6;
+        padding-top: 10px;
+        margin-top: 10px;
+    }
+    
+    .savings {
+        color: #28a745;
+        font-weight: bold;
+    }
+    
+    .hidden {
+        display: none;
+    }
+</style>
+
+<body>
+    <br>
+
+    <div class="checkout-container">
+        
+        <!-- Rewards Section (Only for Authenticated Users) -->
+        {% if user.is_authenticated %}
+        <div class="rewards-section">
+            <h5><i class="fa fa-gift"></i> Your Rewards Balance</h5>
+            <div class="rewards-balance" id="availableRewards">
+                ${{ reward_account.total_points|default:"0.00"|floatformat:2 }}
+            </div>
+            <p class="mb-0" style="font-size: 14px;">Available to use on this order</p>
+            
+            <div class="rewards-input-group">
+                <label><strong>Apply Rewards</strong></label>
+                <div class="input-group mb-2">
+                    <span class="input-group-text">$</span>
+                    <input type="number" 
+                           id="rewardsAmount" 
+                           class="form-control" 
+                           placeholder="0.00" 
+                           step="0.01" 
+                           min="0" 
+                           max="{{ reward_account.total_points|default:'0.00' }}">
+                </div>
+                
+                <button type="button" 
+                        class="apply-rewards-btn" 
+                        onclick="applyRewards()">
+                    <i class="fa fa-check"></i> Apply Rewards
+                </button>
+                
+                <button type="button" 
+                        class="btn btn-link w-100 p-0 text-dark mt-2" 
+                        onclick="applyMaxRewards()"
+                        style="font-size: 12px;">
+                    Apply Maximum (${{ reward_account.total_points|default:"0.00"|floatformat:2 }})
+                </button>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Order Summary -->
+        <div class="order-summary">
+            <h5>Order Summary</h5>
+            <div class="order-line">
+                <span>Subtotal:</span>
+                <span id="subtotalAmount">${{ cart.get_total|floatformat:2 }}</span>
+            </div>
+            
+            <div class="order-line savings hidden" id="rewardsAppliedLine">
+                <span>Rewards Applied:</span>
+                <span id="rewardsAppliedAmount">-$0.00</span>
+            </div>
+            
+            <div class="order-line total">
+                <span>Total to Pay:</span>
+                <span id="finalTotal">${{ cart.get_total|floatformat:2 }}</span>
+            </div>
+            
+            <div id="appliedRewardsNotice" class="alert alert-success mt-3 hidden" style="font-size: 14px;">
+                <i class="fa fa-check-circle"></i> 
+                <strong>Rewards Applied!</strong> 
+                <span id="appliedRewardsText"></span>
+                <button type="button" class="btn btn-sm btn-outline-danger float-end" onclick="removeRewards()">
+                    Remove
+                </button>
+            </div>
+        </div>
+
+        <!-- Checkout Form -->
+        <form id="form" onsubmit="event.preventDefault();">
+            <div>
+                <h3><i class="fa fa-chevron-circle-right" aria-hidden="true"></i> &nbsp; Complete your order</h3>
+                <p>Please enter in the relevant information below.</p>
+                <hr>
+                <br>
+
+                <div class="form-field">
+                    <input class="form-control validate" id="name" type="text" placeholder="Full name*" autocomplete="off" value="{{shipping.full_name}}" required>
+                </div>
+                <br>
+
+                <div class="form-field">
+                    <input class="form-control validate" id="email" type="email" placeholder="Email address*" autocomplete="off" value="{{shipping.email}}" required>
+                </div>
+                <br>
+
+                <div class="form-field">
+                    <input class="form-control validate" id="address1" type="text" placeholder="Address 1*" autocomplete="off" value="{{shipping.address1}}" required>
+                </div>
+                <br>
+
+                <div class="form-field">
+                    <input class="form-control validate" id="address2" type="text" placeholder="Address 2*" autocomplete="off" value="{{shipping.address2}}" required>
+                </div>
+                <br>
+
+                <div class="form-field">
+                    <input class="form-control validate" id="city" type="text" placeholder="City*" autocomplete="off" value="{{shipping.city}}" required>
+                </div>
+                <br>
+
+                <div class="form-field">
+                    <input class="form-control" id="state" type="text" placeholder="State (Optional)" autocomplete="off" value="{{shipping.state}}">
+                </div>
+                <br>
+
+                <div class="form-field">
+                    <input class="form-control" id="zipcode" type="text" placeholder="Zip code (Optional)" autocomplete="off" value="{{shipping.zipcode}}">
+                </div>
+            </div>
+
+            <br>
+            <br>
+
+            <!-- PayPal Button Container -->
+            <div id="paypal-button-container"></div>
+
+            <!-- PayPal SDK -->
+            <script src="https://www.paypal.com/sdk/js?client-id={{paypal_client_id}}" 
+                data-sdk-integration-source="integrationbuilder"></script>
+        </form>
+    </div>
+
+    <br>
+</body>
+
+<!-- JavaScript -->
+<script>
+    // ═══════════════════════════════════════════════════════════════════
+    // REWARDS REDEMPTION LOGIC
+    // ═══════════════════════════════════════════════════════════════════
+    
+    // Store cart total from backend
+    const originalTotal = parseFloat('{{ cart.get_total|floatformat:2 }}');
+    const availableRewards = parseFloat('{{ reward_account.total_points|default:"0.00"|floatformat:2 }}');
+    let appliedRewardsAmount = 0;
+    let total_price = originalTotal.toFixed(2); // This is what PayPal will charge
+    
+    // Apply rewards function
+    function applyRewards() {
+        const rewardsInput = parseFloat($('#rewardsAmount').val()) || 0;
+        
+        // Validation
+        if (rewardsInput <= 0) {
+            alert('Please enter a valid rewards amount.');
+            return;
+        }
+        
+        if (rewardsInput > availableRewards) {
+            alert('You only have $' + availableRewards.toFixed(2) + ' in rewards available.');
+            return;
+        }
+        
+        if (rewardsInput > originalTotal) {
+            alert('Rewards cannot exceed order total of $' + originalTotal.toFixed(2) + '.');
+            return;
+        }
+        
+        // Apply rewards
+        appliedRewardsAmount = rewardsInput;
+        updateOrderSummary();
+        
+        // Show applied notice
+        $('#appliedRewardsNotice').removeClass('hidden');
+        $('#appliedRewardsText').text('$' + appliedRewardsAmount.toFixed(2) + ' rewards applied to this order.');
+    }
+    
+    // Apply maximum rewards
+    function applyMaxRewards() {
+        const maxApplicable = Math.min(availableRewards, originalTotal);
+        $('#rewardsAmount').val(maxApplicable.toFixed(2));
+        applyRewards();
+    }
+    
+    // Remove rewards
+    function removeRewards() {
+        appliedRewardsAmount = 0;
+        $('#rewardsAmount').val('');
+        updateOrderSummary();
+        $('#appliedRewardsNotice').addClass('hidden');
+    }
+    
+    // Update order summary display
+    function updateOrderSummary() {
+        const finalTotal = originalTotal - appliedRewardsAmount;
+        total_price = finalTotal.toFixed(2); // Update PayPal amount
+        
+        // Update displays
+        $('#rewardsAppliedAmount').text('-$' + appliedRewardsAmount.toFixed(2));
+        $('#finalTotal').text('$' + finalTotal.toFixed(2));
+        
+        // Show/hide rewards line
+        if (appliedRewardsAmount > 0) {
+            $('#rewardsAppliedLine').removeClass('hidden');
+        } else {
+            $('#rewardsAppliedLine').addClass('hidden');
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // PAYPAL INTEGRATION (WITH REWARDS SUPPORT)
+    // ═══════════════════════════════════════════════════════════════════
+
+    const paypalButtonsComponent = paypal.Buttons({
+        style: {
+            color: "blue",
+            shape: "pill",
+            layout: "vertical",
+        },
+
+        onInit: function(data, actions) {
+            actions.disable();
+
+            // Complete order - NO SHIPPING
+            document.querySelectorAll('.validate').forEach(item => {
+                item.addEventListener('keyup', event => {
+                    var order_verified = 'Yes';
+
+                    function checkInputs(){
+                        $(':input[required]').each(function(){
+                            if($(this).val() == ''){
+                                return order_verified = 'No';
+                            }
+                        });
+                        return order_verified;
+                    }
+                    
+                    var isOrderVerified = checkInputs();
+
+                    if(isOrderVerified === 'Yes') {
+                        actions.enable();
+                    } else {
+                        actions.disable();
+                    }
+                });
+            });
+
+            // Complete order - WITH SHIPPING
+            var order_verified = 'Yes';
+
+            function checkInputs(){
+                $(':input[required]').each(function(){
+                    if($(this).val() == ''){
+                        return order_verified = 'No';
+                    }
+                });
+                return order_verified;
+            }
+            
+            var isOrderVerified = checkInputs();
+
+            if(isOrderVerified === 'Yes') {
+                actions.enable();
+            } else {
+                actions.disable();
+            }
+        },
+
+        // Set up the transaction
+        createOrder: (data, actions) => {
+            // ↓↓↓ IMPORTANT: Use total_price which includes rewards discount ↓↓↓
+            const createOrderPayload = {
+                purchase_units: [
+                    {
+                        amount: {
+                            value: total_price  // This is the reduced amount after rewards
+                        }
+                    }
+                ]
+            };
+
+            return actions.order.create(createOrderPayload);
+        },
+
+        // Finalize the transaction
+        onApprove: (data, actions) => {
+            const captureOrderHandler = (details) => {
+                const payerName = details.payer.name.given_name;
+                console.log('Transaction completed');
+
+                // ↓↓↓ IMPORTANT: Pass rewards_applied to backend ↓↓↓
+                $.ajax({
+                    type: 'POST',
+                    url: '{% url "complete-order" %}',
+                    data: {
+                        name: $('#name').val(),
+                        email: $('#email').val(),
+                        address1: $('#address1').val(),
+                        address2: $('#address2').val(),
+                        city: $('#city').val(),
+                        state: $('#state').val(),
+                        zipcode: $('#zipcode').val(),
+                        rewards_applied: appliedRewardsAmount.toFixed(2),  // ← NEW: Send rewards amount
+                        csrfmiddlewaretoken: "{{csrf_token}}",
+                        action: 'post'
+                    },
+                    success: function(json){
+                        window.location.replace("{% url 'payment-success' %}");
+                    },
+                    error: function(xhr, errmsg, err){
+                        window.location.replace("{% url 'payment-failed' %}");
+                    }
+                });
+            };
+
+            return actions.order.capture().then(captureOrderHandler);
+        },
+
+        // Handle unrecoverable errors
+        onError: (err) => {
+            console.error('An error prevented the buyer from checking out with PayPal');
+        }
+    });
+
+    paypalButtonsComponent
+        .render("#paypal-button-container")
+        .catch((err) => {
+            console.error('PayPal Buttons failed to render');
+        });
+</script>
+
+{% endblock %}

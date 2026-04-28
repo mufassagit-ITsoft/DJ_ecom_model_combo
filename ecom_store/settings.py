@@ -41,7 +41,11 @@ INSTALLED_APPS = [
     # apps,
     'store',
     'account',
-
+    'payment',
+    'cart',
+    'mathfilters,'
+    'crispy_bootstrap5',
+    'crispy_forms',
 ]
 
 SECURE_CROSS_ORIGIN_OPENER_POLICY='same-origin-allow-popups'
@@ -70,6 +74,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'cart.context_processors.cart',
+                'store.views.categories',
+                'store.views.brands',
+                'payment.views.paypal_client_id',
             ],
         },
     },
@@ -138,3 +146,5 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS')
 
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+
+PAYPAL_CLIENT_ID = config('PAYPAL_CLIENT_ID')

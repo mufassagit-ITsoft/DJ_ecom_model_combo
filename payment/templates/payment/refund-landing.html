@@ -1,0 +1,144 @@
+{% include "store/base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+<style>
+    body {
+        background-color: gray;
+    }
+    
+    .refund-option-card {
+        background-color: white;
+        border-radius: 10px;
+        padding: 40px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        text-align: center;
+        transition: transform 0.2s;
+    }
+    
+    .refund-option-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
+    .refund-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .icon-large {
+        font-size: 48px;
+        margin-bottom: 20px;
+        color: #667eea;
+    }
+</style>
+
+<body>
+    <br>
+
+    <!-- Header -->
+    <div class="container refund-header shadow-lg">
+        <h2><i class="fa fa-undo" aria-hidden="true"></i> Request a Refund</h2>
+        <p class="mb-0">Choose your option below based on how you checked out</p>
+    </div>
+
+    <!-- Options -->
+    <div class="container">
+        <div class="row">
+            <!-- Registered Users -->
+            <div class="col-md-6">
+                <div class="refund-option-card shadow-md">
+                    <i class="fa fa-user icon-large" aria-hidden="true"></i>
+                    <h4>I have an account</h4>
+                    <p class="text-muted">If you created an account and logged in to make your purchase</p>
+                    <hr>
+                    
+                    {% if user.is_authenticated %}
+                        <p class="mb-3">You're logged in as <strong>{{ user.username }}</strong></p>
+                        <a href="{% url 'track-orders' %}" class="btn btn-primary btn-lg">
+                            <i class="fa fa-list-alt" aria-hidden="true"></i> View My Orders
+                        </a>
+                        <p class="mt-3"><small class="text-muted">Click "Request Refund" on the order you want to return</small></p>
+                    {% else %}
+                        <a href="{% url 'my-login' %}" class="btn btn-primary btn-lg">
+                            <i class="fa fa-sign-in" aria-hidden="true"></i> Login to Your Account
+                        </a>
+                        <p class="mt-3"><small class="text-muted">After logging in, go to Track Orders to request a refund</small></p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Guest Users -->
+            <div class="col-md-6">
+                <div class="refund-option-card shadow-md">
+                    <i class="fa fa-shopping-cart icon-large" aria-hidden="true"></i>
+                    <h4>I checked out as guest</h4>
+                    <p class="text-muted">If you made your purchase without creating an account</p>
+                    <hr>
+                    
+                    <p class="mb-3">You'll need your <strong>Order ID</strong> and <strong>email address</strong></p>
+                    <a href="{% url 'guest-refund-request' %}" class="btn btn-success btn-lg">
+                        <i class="fa fa-paper-plane" aria-hidden="true"></i> Submit Refund Request
+                    </a>
+                    <p class="mt-3"><small class="text-muted">Check your order confirmation email for your Order ID</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Info -->
+    <div class="container">
+        <div class="refund-option-card shadow-md">
+            <h5><i class="fa fa-info-circle" aria-hidden="true"></i> Refund Process</h5>
+            <hr>
+            <div class="row text-start">
+                <div class="col-md-3">
+                    <strong>1. Submit Request</strong>
+                    <p class="text-muted small">Fill out the refund form with your order details and reason</p>
+                </div>
+                <div class="col-md-3">
+                    <strong>2. Ship Product Back</strong>
+                    <p class="text-muted small">Pack and ship the item(s) back to our returns address</p>
+                </div>
+                <div class="col-md-3">
+                    <strong>3. We Process</strong>
+                    <p class="text-muted small">We receive, inspect, and approve your return</p>
+                </div>
+                <div class="col-md-3">
+                    <strong>4. Get Refunded</strong>
+                    <p class="text-muted small">Refund issued to your PayPal within 3-5 business days</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="container">
+        <div class="refund-option-card shadow-md text-start">
+            <h5><i class="fa fa-question-circle" aria-hidden="true"></i> Frequently Asked Questions</h5>
+            <hr>
+            
+            <strong>How long does the refund process take?</strong>
+            <p class="text-muted">Once we receive your returned item, refunds are processed within 3-5 business days.</p>
+            
+            <strong>Where do I find my Order ID?</strong>
+            <p class="text-muted">Check your order confirmation email. The subject line will say "Order received" and will include your order number.</p>
+            
+            <strong>What if I lost my order confirmation email?</strong>
+            <p class="text-muted">If you created an account, simply log in and go to "Track Orders". For guest checkouts, please contact our support team.</p>
+            
+            <strong>Can I track my refund status?</strong>
+            <p class="text-muted mb-0">Yes! After submitting your refund request, you'll receive a Refund Request ID that you can use to check the status.</p>
+        </div>
+    </div>
+
+    <br>
+</body>
+
+{% endblock %}

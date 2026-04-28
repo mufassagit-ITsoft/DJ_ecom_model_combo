@@ -1,0 +1,448 @@
+{% include "store/base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+<style>
+    body {
+        background-color: gray;
+    }
+    
+    .status-card {
+        background-color: white;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .status-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    
+    .status-badge {
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-weight: bold;
+        display: inline-block;
+        font-size: 14px;
+    }
+    
+    .status-pending_return { background-color: #ffc107; color: #000; }
+    .status-product_received { background-color: #17a2b8; color: white; }
+    .status-processing_refund { background-color: #007bff; color: white; }
+    .status-completed { background-color: #28a745; color: white; }
+    .status-rejected { background-color: #dc3545; color: white; }
+    .status-cancelled { background-color: #6c757d; color: white; }
+    
+    .refund-items {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    /* Checklist Styles */
+    .refund-checklist {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .checklist-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        border-left: 4px solid #ddd;
+        transition: all 0.3s ease;
+    }
+    
+    .checklist-item.completed {
+        background-color: #d4edda;
+        border-left-color: #28a745;
+    }
+    
+    .checklist-item.in-progress {
+        background-color: #d1ecf1;
+        border-left-color: #17a2b8;
+        animation: pulse-bg 2s infinite;
+    }
+    
+    .checklist-item.pending {
+        background-color: #f8f9fa;
+        border-left-color: #ddd;
+        opacity: 0.7;
+    }
+    
+    @keyframes pulse-bg {
+        0%, 100% { background-color: #d1ecf1; }
+        50% { background-color: #bee5eb; }
+    }
+    
+    .checkbox-icon {
+        font-size: 28px;
+        margin-right: 20px;
+        min-width: 28px;
+        margin-top: 5px;
+    }
+    
+    .checkbox-icon.completed {
+        color: #28a745;
+    }
+    
+    .checkbox-icon.in-progress {
+        color: #17a2b8;
+    }
+    
+    .checkbox-icon.pending {
+        color: #ddd;
+    }
+    
+    .checklist-content {
+        flex: 1;
+    }
+    
+    .checklist-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #333;
+    }
+    
+    .checklist-date {
+        font-size: 12px;
+        color: #6c757d;
+        margin-bottom: 8px;
+    }
+    
+    .checklist-description {
+        font-size: 14px;
+        color: #495057;
+        margin: 0;
+    }
+    
+    .step-number {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        background-color: #6c757d;
+        color: white;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 30px;
+        font-weight: bold;
+        margin-right: 10px;
+        font-size: 14px;
+    }
+    
+    .step-number.completed {
+        background-color: #28a745;
+    }
+    
+    .step-number.in-progress {
+        background-color: #17a2b8;
+    }
+</style>
+
+<body>
+    <br>
+
+    <!-- Status Header -->
+    <div class="container status-header shadow-lg">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h3><i class="fa fa-undo" aria-hidden="true"></i> Refund Request #{{ refund.id }}</h3>
+                <p class="mb-0">Order #{{ refund.order.id }} | Submitted {{ refund.created_at|date:"F d, Y" }}</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="status-badge status-{{ refund.status|lower }}">
+                    {{ refund.get_status_display }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Refund Details -->
+    <div class="container status-card shadow-md">
+        <h4><i class="fa fa-info-circle" aria-hidden="true"></i> Refund Details</h4>
+        <hr>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Refund Amount:</strong> ${{ refund.refund_amount|floatformat:2 }}</p>
+                <p><strong>Reason:</strong> {{ refund.get_reason_display }}</p>
+                {% if refund.reason_details %}
+                <p><strong>Details:</strong> {{ refund.reason_details }}</p>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <p><strong>Submitted:</strong> {{ refund.created_at|date:"F d, Y - g:i A" }}</p>
+                {% if refund.tracking_number %}
+                <p><strong>Tracking Number:</strong> {{ refund.tracking_number }}</p>
+                {% endif %}
+                {% if refund.rewards_used > 0 %}
+                <p><strong>Rewards Used in Order:</strong> ${{ refund.rewards_used|floatformat:2 }}</p>
+                <small class="text-muted">These rewards will be restored upon completion</small>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if refund.rejection_reason %}
+        <div class="alert alert-danger mt-3">
+            <strong><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Rejection Reason:</strong><br>
+            {{ refund.rejection_reason }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Items Being Refunded -->
+    <div class="container status-card shadow-md">
+        <h4><i class="fa fa-list" aria-hidden="true"></i> Items Being Refunded</h4>
+        <hr>
+        
+        <div class="refund-items">
+            {% for item in refund_items %}
+            <div class="mb-3 pb-3 border-bottom">
+                <strong>{{ item.order_item.product.title }}</strong><br>
+                Quantity: {{ item.quantity_to_refund }} | 
+                Refund Amount: ${{ item.refund_amount|floatformat:2 }}<br>
+                {% if item.restocked %}
+                <span class="badge bg-success mt-1">Restocked</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Refund Progress Checklist -->
+    <div class="container status-card shadow-md">
+        <h4><i class="fa fa-tasks" aria-hidden="true"></i> Refund Progress Checklist</h4>
+        <hr>
+        
+        <ul class="refund-checklist">
+            <!-- Step 1: Request Submitted -->
+            <li class="checklist-item completed">
+                <div class="checkbox-icon completed">
+                    <i class="fa fa-check-circle" aria-hidden="true"></i>
+                </div>
+                <div class="checklist-content">
+                    <div class="checklist-title">
+                        <span class="step-number completed">1</span>
+                        Refund Request Submitted
+                    </div>
+                    <div class="checklist-date">
+                        {{ refund.created_at|date:"F d, Y - g:i A" }}
+                    </div>
+                    <p class="checklist-description">
+                        ✓ Your refund request has been received and is being processed.
+                    </p>
+                </div>
+            </li>
+
+            <!-- Step 2: Product Returned -->
+            {% if refund.product_received_at %}
+            <li class="checklist-item completed">
+                <div class="checkbox-icon completed">
+                    <i class="fa fa-check-circle" aria-hidden="true"></i>
+                </div>
+                <div class="checklist-content">
+                    <div class="checklist-title">
+                        <span class="step-number completed">2</span>
+                        Product Returned & Received
+                    </div>
+                    <div class="checklist-date">
+                        {{ refund.product_received_at|date:"F d, Y - g:i A" }}
+                    </div>
+                    <p class="checklist-description">
+                        ✓ We've received your return shipment and verified the product condition. Items have been restocked.
+                    </p>
+                </div>
+            </li>
+            {% elif refund.status == 'PENDING_RETURN' %}
+            <li class="checklist-item in-progress">
+                <div class="checkbox-icon in-progress">
+                    <i class="fa fa-circle-o-notch fa-spin" aria-hidden="true"></i>
+                </div>
+                <div class="checklist-content">
+                    <div class="checklist-title">
+                        <span class="step-number in-progress">2</span>
+                        Waiting for Product Return
+                    </div>
+                    <div class="checklist-date">
+                        In Progress
+                    </div>
+                    <p class="checklist-description">
+                        <strong>Action Required:</strong> Please ship the product(s) back to us.
+                        {% if refund.tracking_number %}
+                        <br>Tracking: {{ refund.tracking_number }}
+                        {% endif %}
+                    </p>
+                </div>
+            </li>
+            {% else %}
+            <li class="checklist-item completed">
+                <div class="checkbox-icon completed">
+                    <i class="fa fa-check-circle" aria-hidden="true"></i>
+                </div>
+                <div class="checklist-content">
+                    <div class="checklist-title">
+                        <span class="step-number completed">2</span>
+                        Product Returned & Received
+                    </div>
+                    <div class="checklist-date">
+                        Completed
+                    </div>
+                    <p class="checklist-description">
+                        ✓ Return received and processed.
+                    </p>
+                </div>
+            </li>
+            {% endif %}
+
+            <!-- Step 3: PayPal Refund Processing -->
+            {% if refund.status == 'COMPLETED' %}
+            <li class="checklist-item completed">
+                <div class="checkbox-icon completed">
+                    <i class="fa fa-check-circle" aria-hidden="true"></i>
+                </div>
+                <div class="checklist-content">
+                    <div class="checklist-title">
+                        <span class="step-number completed">3</span>
+                        PayPal Refund Processed
+                    </div>
+                    <div class="checklist-date">
+                        {{ refund.refund_completed_at|date:"F d, Y - g:i A" }}
+                    </div>
+                    <p class="checklist-description">
+                        ✓ Your PayPal refund has been processed successfully.
+                        {% if refund.paypal_refund_id %}
+                        <br>Transaction ID: {{ refund.paypal_refund_id }}
+                        {% endif %}
+                    </p>
+                </div>
+            </li>
+            {% elif refund.status in 'PROCESSING_REFUND,PRODUCT_RECEIVED' %}
+            <li class="checklist-item in-progress">
+                <div class="checkbox-icon in-progress">
+                    <i class="fa fa-circle-o-notch fa-spin" aria-hidden="true"></i>
+                </div>
+                <div class="checklist-content">
+                    <div class="checklist-title">
+                        <span class="step-number in-progress">3</span>
+                        Processing PayPal Refund
+                    </div>
+                    <div class="checklist-date">
+                        In Progress
+                    </div>
+                    <p class="checklist-description">
+                        Your refund is being processed through PayPal. This typically takes 1-2 business days.
+                    </p>
+                </div>
+            </li>
+            {% else %}
+            <li class="checklist-item pending">
+                <div class="checkbox-icon pending">
+                    <i class="fa fa-circle-o" aria-hidden="true"></i>
+                </div>
+                <div class="checklist-content">
+                    <div class="checklist-title">
+                        <span class="step-number">3</span>
+                        PayPal Refund Processing
+                    </div>
+                    <div class="checklist-date">
+                        Pending
+                    </div>
+                    <p class="checklist-description">
+                        Refund will be processed once product is received and verified.
+                    </p>
+                </div>
+            </li>
+            {% endif %}
+
+            <!-- Step 4: Refund Complete -->
+            {% if refund.status == 'COMPLETED' %}
+            <li class="checklist-item completed">
+                <div class="checkbox-icon completed">
+                    <i class="fa fa-check-circle" aria-hidden="true"></i>
+                </div>
+                <div class="checklist-content">
+                    <div class="checklist-title">
+                        <span class="step-number completed">4</span>
+                        Refund Completed
+                    </div>
+                    <div class="checklist-date">
+                        {{ refund.refund_completed_at|date:"F d, Y - g:i A" }}
+                    </div>
+                    <p class="checklist-description">
+                        ✓ Refund of <strong>${{ refund.refund_amount|floatformat:2 }}</strong> has been sent to your PayPal account.
+                        {% if refund.rewards_used > 0 %}
+                        <br>✓ Your rewards balance has been adjusted (+${{ refund.rewards_used|floatformat:2 }} restored).
+                        {% endif %}
+                    </p>
+                </div>
+            </li>
+            {% else %}
+            <li class="checklist-item pending">
+                <div class="checkbox-icon pending">
+                    <i class="fa fa-circle-o" aria-hidden="true"></i>
+                </div>
+                <div class="checklist-content">
+                    <div class="checklist-title">
+                        <span class="step-number">4</span>
+                        Refund Complete
+                    </div>
+                    <div class="checklist-date">
+                        Pending
+                    </div>
+                    <p class="checklist-description">
+                        You'll receive ${{ refund.refund_amount|floatformat:2 }} in your PayPal account once the refund is processed.
+                    </p>
+                </div>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <!-- Actions -->
+    <div class="container status-card shadow-md">
+        <div class="d-flex justify-content-between align-items-center">
+            <a href="{% url 'track-orders' %}" class="btn btn-secondary">
+                <i class="fa fa-arrow-left" aria-hidden="true"></i> Back to Orders
+            </a>
+            
+            {% if can_cancel %}
+            <form method="POST" onsubmit="return confirm('Are you sure you want to cancel this refund request?');">
+                {% csrf_token %}
+                <button type="submit" name="cancel_refund" class="btn btn-danger">
+                    <i class="fa fa-times" aria-hidden="true"></i> Cancel Refund Request
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Help Info -->
+    <div class="container status-card shadow-md">
+        <h5><i class="fa fa-question-circle" aria-hidden="true"></i> Need Help?</h5>
+        <p>If you have questions about your refund, please contact our support team with your refund ID: <strong>#{{ refund.id }}</strong></p>
+        
+        {% if refund.status == 'PENDING_RETURN' and not refund.tracking_number %}
+        <div class="alert alert-warning">
+            <strong>Remember to ship your product back!</strong><br>
+            Ship to: <strong>Gamestore Returns, [Your Address]</strong><br>
+            Include your Order ID (#{{ refund.order.id }}) in the package.
+        </div>
+        {% endif %}
+    </div>
+
+    <br>
+</body>
+
+{% endblock %}

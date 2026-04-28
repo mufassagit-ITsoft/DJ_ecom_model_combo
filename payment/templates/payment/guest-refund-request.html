@@ -1,0 +1,141 @@
+{% include "store/base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+<style>
+    body {
+        background-color: gray;
+    }
+    
+    .refund-form-card {
+        background-color: white;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .guest-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+</style>
+
+<body>
+    <br>
+
+    <!-- Header -->
+    <div class="container guest-header shadow-lg">
+        <h3><i class="fa fa-undo" aria-hidden="true"></i> Request Refund (Guest)</h3>
+        <p class="mb-0">Submit a refund request for your order</p>
+    </div>
+
+    <!-- Refund Request Form -->
+    <div class="container refund-form-card shadow-md">
+        <h4>Refund Request Form</h4>
+        <p>Please fill out this form to request a refund for your order.</p>
+        <hr>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="alert alert-info">
+                <i class="fa fa-info-circle" aria-hidden="true"></i>
+                <strong>Guest Checkout:</strong> Please enter your order details below. You'll need your Order ID and the email address used during checkout.
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label for="order_id"><strong>Order ID <span class="text-danger">*</span></strong></label>
+                        <input type="number" class="form-control" id="order_id" name="order_id" placeholder="e.g., 123" required>
+                        <small class="form-text text-muted">Found in your order confirmation email</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label for="email"><strong>Email Address <span class="text-danger">*</span></strong></label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="your-email@example.com" required>
+                        <small class="form-text text-muted">Email used during checkout</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="reason"><strong>Reason for Refund <span class="text-danger">*</span></strong></label>
+                <select class="form-control" id="reason" name="reason" required>
+                    <option value="">-- Select a reason --</option>
+                    <option value="DEFECTIVE">Product is defective</option>
+                    <option value="WRONG_ITEM">Wrong item received</option>
+                    <option value="NOT_AS_DESCRIBED">Not as described</option>
+                    <option value="CHANGED_MIND">Changed my mind</option>
+                    <option value="OTHER">Other reason</option>
+                </select>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="reason_details"><strong>Additional Details</strong></label>
+                <textarea class="form-control" id="reason_details" name="reason_details" rows="4" placeholder="Please provide more details about your refund request..."></textarea>
+                <small class="form-text text-muted">The more details you provide, the faster we can process your refund.</small>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="tracking_number"><strong>Return Tracking Number (Optional)</strong></label>
+                <input type="text" class="form-control" id="tracking_number" name="tracking_number" placeholder="e.g., 1Z999AA10123456784">
+                <small class="form-text text-muted">If you've already shipped the item back, enter your tracking number here.</small>
+            </div>
+
+            <hr>
+
+            <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+                <strong>Important Information:</strong>
+                <ul class="mb-0 mt-2">
+                    <li>You must ship the product back to us before the refund can be processed.</li>
+                    <li>Refunds are processed via PayPal to the original payment method.</li>
+                    <li>Please save your <strong>Refund Request ID</strong> after submitting - you'll need it to check your refund status.</li>
+                    <li>Processing time: 3-5 business days after we receive the product.</li>
+                </ul>
+            </div>
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fa fa-paper-plane" aria-hidden="true"></i> Submit Refund Request
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Help Section -->
+    <div class="container refund-form-card shadow-md mt-3">
+        <h5><i class="fa fa-question-circle" aria-hidden="true"></i> Finding Your Order Information</h5>
+        <hr>
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Order ID:</strong>
+                <p>Check your order confirmation email. The subject line will say "Order received" and the email will contain your order number (e.g., Order - #123).</p>
+            </div>
+            <div class="col-md-6">
+                <strong>Email Address:</strong>
+                <p>Use the same email address you entered during checkout. This is where you received your order confirmation.</p>
+            </div>
+        </div>
+        
+        <div class="alert alert-secondary mt-3">
+            <strong>Return Address:</strong><br>
+            Gamestore Returns Department<br>
+            [Your Business Address]<br>
+            [City, State ZIP]<br>
+            <br>
+            <small>Please include your Order ID in the package.</small>
+        </div>
+    </div>
+
+    <br>
+</body>
+
+{% endblock %}

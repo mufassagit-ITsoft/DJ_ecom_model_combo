@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-#from payment.models import Order
+from payment.models import Order
 from decimal import Decimal
 
 
