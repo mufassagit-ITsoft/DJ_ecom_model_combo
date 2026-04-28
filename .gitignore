@@ -329,5 +329,7 @@ misc.txt
 # backup data files
 backup.json
 
+# misc files
+.vscode
 
 # End of https://www.toptal.com/developers/gitignore/api/python,django,c++,java
