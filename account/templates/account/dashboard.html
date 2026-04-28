@@ -1,0 +1,144 @@
+{% include "store/base.html" %}
+
+{% load static %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<style>
+    body{
+        background-color: gray;
+    }
+    .rewards-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .rewards-badge {
+        background-color: #ffc107;
+        color: #000;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        display: inline-block;
+    }
+    .transaction-item {
+        border-left: 3px solid #28a745;
+        padding-left: 15px;
+        margin-bottom: 10px;
+    }
+</style>
+
+
+<body>
+    <br>
+    
+    <!-- Rewards Points Card -->
+    <div class="container rewards-card shadow-lg">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h3> <i class="fa fa-star" aria-hidden="true"></i> &nbsp; Your Rewards Points </h3>
+                <h1 class="display-4">${{ reward_account.total_points|floatformat:2 }}</h1>
+                <p class="mb-0">Available Points</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="rewards-badge">
+                    <i class="fa fa-trophy" aria-hidden="true"></i> 
+                    Lifetime: ${{ reward_account.lifetime_points|floatformat:2 }}
+                </div>
+                <br><br>
+                <a href="{% url 'rewards-history' %}" class="btn btn-light btn-sm">
+                    <i class="fa fa-history" aria-hidden="true"></i> View Full History
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome Section -->
+    <div class="container bg-white shadow-md p-5 form-layout">
+        <h4> <i class="fa fa-hand-paper-o" aria-hidden="true"></i> &nbsp; Welcome, {{user}} </h4>
+        <hr>
+        <p> This is your dashboard where you can perform any of the following: </p>
+        <li> Track your orders and rewards </li>
+        <li> Manage your account </li>
+        <li> View your rewards history </li>
+    </div>
+
+    <br>
+
+    <!-- Recent Rewards Section -->
+    {% if recent_transactions %}
+    <div class="container bg-white shadow-md p-5 form-layout">
+        <h4> <i class="fa fa-gift" aria-hidden="true"></i> &nbsp; Recent Rewards Earned </h4>
+        <hr>
+        {% for transaction in recent_transactions %}
+        <div class="transaction-item">
+            <strong>Order #{{ transaction.order.id }}</strong> - 
+            Order Total: ${{ transaction.order_total|floatformat:2 }} | 
+            <span style="color: #28a745; font-weight: bold;">
+                Points Earned: ${{ transaction.points_earned|floatformat:2 }}
+            </span>
+            <br>
+            <small class="text-muted">{{ transaction.created_at|date:"F d, Y" }}</small>
+        </div>
+        {% endfor %}
+        <a href="{% url 'rewards-history' %}" class="btn btn-outline-primary btn-sm mt-3">
+            View All Transactions →
+        </a>
+    </div>
+    <br>
+    {% endif %}
+
+    <!-- Track Orders Section -->
+    <div class="container bg-white shadow-md p-5 form-layout">
+        <h4> <i class="fa fa-list-alt" aria-hidden="true"></i> &nbsp; Track your orders </h4>
+        <hr>
+        <p> Track all of your orders and see rewards earned... </p>
+        <a class="btn btn-primary navbar-btn text-white" type="button"  href="{% url 'track-orders' %}"> My orders </a>
+    </div>
+    <br>
+
+    <!-- Account Management Section -->
+    <div class="container bg-white shadow-md p-5 form-layout">
+        <h4> <i class="fa fa-address-book" aria-hidden="true"></i> &nbsp; Manage your account </h4>
+        <hr>
+        <p> Update or delete your account </p>
+
+        <a class="btn btn-primary navbar-btn text-white" type="button"  href="{% url 'profile-management' %}"> Profile management </a>
+    </div>
+
+    <br>
+
+    <!-- Shipping Management Section -->
+    <div class="container bg-white shadow-md p-5 form-layout">
+        <h4> <i class="fa fa-chevron-circle-right" aria-hidden="true"></i> &nbsp; Manage shipping </h4>
+        <hr>
+        <p> Enter in a shipping address </p>
+        <a class="btn btn-primary navbar-btn text-white" type="button"  href="{% url 'manage-shipping' %}"> Manage shipping </a>
+    </div>
+
+    <br>
+
+    <!-- Rewards Info Box -->
+    <div class="container bg-white shadow-md p-5 form-layout">
+        <h4> <i class="fa fa-info-circle" aria-hidden="true"></i> &nbsp; How Rewards Work </h4>
+        <hr>
+        <p><strong>Earn rewards points with every purchase!</strong></p>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li>💰 $0 - $10: Earn $1.00</li>
+            <li>💰 $11 - $20: Earn $2.00</li>
+            <li>💰 $21 - $30: Earn $3.00</li>
+            <li>💰 $31 - $40: Earn $4.00</li>
+            <li>💰 $41 - $100: Earn $5.00</li>
+            <li>💰 $101 - $200: Earn $10.00</li>
+            <li>💰 $201+: Earn $10.00 + $5.00 for each additional $100</li>
+        </ul>
+        <p class="text-muted"><small>Points are automatically added to your account after successful payment.</small></p>
+    </div>
+
+    <br>
+
+{% endblock %}

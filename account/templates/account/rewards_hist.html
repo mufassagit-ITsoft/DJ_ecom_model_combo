@@ -1,0 +1,142 @@
+{% include "store/base.html" %}
+
+{% load static %}
+
+{% load crispy_forms_tags %}
+
+
+{% block content %}
+
+    <style>
+        body{
+            background-color: gray;
+        }
+        
+        .rewards-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .transaction-card {
+            background-color: white;
+            border-left: 4px solid #28a745;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .transaction-card.redeemed {
+            border-left-color: #dc3545;
+        }
+        
+        .points-positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .points-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+
+    <br>
+
+    <!-- Rewards Summary Header -->
+    <div class="container rewards-header shadow-lg">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h2> <i class="fa fa-star" aria-hidden="true"></i> Rewards History </h2>
+                <p class="mb-0">Complete transaction history</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="mb-2">
+                    <small>Current Balance</small>
+                    <h1 class="display-4 mb-0">${{ reward_account.total_points|floatformat:2 }}</h1>
+                </div>
+                <small>Lifetime Earned: ${{ reward_account.lifetime_points|floatformat:2 }}</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="container bg-white shadow-md p-3 mb-3">
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-primary btn-sm">
+            <i class="fa fa-arrow-left" aria-hidden="true"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Transactions List -->
+    <div class="container">
+        {% if transactions %}
+            <div class="bg-white shadow-md p-4 mb-3">
+                <h5>All Transactions ({{ transactions.count }})</h5>
+            </div>
+            
+            {% for transaction in transactions %}
+            <div class="transaction-card {% if transaction.transaction_type == 'REDEEMED' %}redeemed{% endif %}">
+                <div class="row align-items-center">
+                    <div class="col-md-1 text-center">
+                        {% if transaction.transaction_type == 'PURCHASE' %}
+                            <i class="fa fa-plus-circle fa-2x text-success" aria-hidden="true"></i>
+                        {% elif transaction.transaction_type == 'REDEEMED' %}
+                            <i class="fa fa-minus-circle fa-2x text-danger" aria-hidden="true"></i>
+                        {% else %}
+                            <i class="fa fa-info-circle fa-2x text-info" aria-hidden="true"></i>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-7">
+                        <h6 class="mb-1">
+                            {% if transaction.order %}
+                                Order #{{ transaction.order.id }}
+                            {% else %}
+                                {{ transaction.transaction_type }}
+                            {% endif %}
+                        </h6>
+                        <p class="mb-1">
+                            {% if transaction.order %}
+                                Order Total: ${{ transaction.order_total|floatformat:2 }}
+                            {% endif %}
+                        </p>
+                        <small class="text-muted">
+                            <i class="fa fa-calendar" aria-hidden="true"></i>
+                            {{ transaction.created_at|date:"F d, Y - g:i A" }}
+                        </small>
+                        {% if transaction.description %}
+                        <br>
+                        <small class="text-muted">{{ transaction.description }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 text-end">
+                        <h4 class="{% if transaction.transaction_type == 'PURCHASE' %}points-positive{% else %}points-negative{% endif %}">
+                            {% if transaction.transaction_type == 'PURCHASE' %}+{% else %}-{% endif %}
+                            ${{ transaction.points_earned|floatformat:2 }}
+                        </h4>
+                        <span class="badge bg-secondary">{{ transaction.transaction_type }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+        {% else %}
+            <div class="container bg-white shadow-md p-5 text-center">
+                <i class="fa fa-inbox fa-3x text-muted mb-3" aria-hidden="true"></i>
+                <h5>No transactions yet</h5>
+                <p class="text-muted">Make a purchase to start earning rewards!</p>
+                <a href="{% url 'store' %}" class="btn btn-primary">
+                    <i class="fa fa-shopping-bag" aria-hidden="true"></i> Start Shopping
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <br>
+    <br>
+
+{% endblock %}
