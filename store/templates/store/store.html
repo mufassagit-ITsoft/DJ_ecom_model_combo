@@ -4,54 +4,142 @@
 
 {% block content %}
 
-    <!-- Introduction section -->  
-    <section class="py-4 text-center container">
-        <div class="row py-lg-5">
-            <div class="col-lg-6 col-md-8 mx-auto">
-                <h1> GameStore </h1>
-                <h4>When you level up, we level up!!!</h4>
+    <!-- Introduction section -->
+    <section class="py-4 text-center container jumbotron">
+        <div class="row py-lg-5 align-items-center justify-content-center">
+
+            <!-- Controller SVG — left side -->
+            <div class="col-lg-4 col-md-5 d-flex justify-content-center mb-4 mb-md-0">
+                <svg width="100%" style="max-width:340px;" viewBox="0 0 680 360" role="img" xmlns="http://www.w3.org/2000/svg">
+                    <title>Retro game controller illustration</title>
+                    <desc>A cartoonish retro game controller decoration</desc>
+                    <defs>
+                        <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#e8e0d0"/>
+                            <stop offset="100%" stop-color="#b8b0a0"/>
+                        </linearGradient>
+                        <linearGradient id="buttonGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#cc2233"/>
+                            <stop offset="100%" stop-color="#991122"/>
+                        </linearGradient>
+                        <linearGradient id="dpadGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#2a2a2a"/>
+                            <stop offset="100%" stop-color="#111111"/>
+                        </linearGradient>
+                        <filter id="shadow" x="-10%" y="-10%" width="130%" height="140%">
+                            <feDropShadow dx="6" dy="8" stdDeviation="4" flood-color="#000000" flood-opacity="0.35"/>
+                        </filter>
+                    </defs>
+                    <!-- Controller body -->
+                    <rect x="90" y="80" width="500" height="210" rx="40" ry="40"
+                          fill="url(#bodyGrad)" stroke="#333" stroke-width="5" filter="url(#shadow)"/>
+                    <!-- Top highlight -->
+                    <rect x="110" y="83" width="460" height="18" rx="20" ry="20"
+                          fill="#f4ede0" opacity="0.7"/>
+                    <!-- Grips -->
+                    <ellipse cx="180" cy="278" rx="70" ry="30"
+                             fill="url(#bodyGrad)" stroke="#333" stroke-width="5"/>
+                    <ellipse cx="500" cy="278" rx="70" ry="30"
+                             fill="url(#bodyGrad)" stroke="#333" stroke-width="5"/>
+                    <ellipse cx="170" cy="270" rx="38" ry="12" fill="#f4ede0" opacity="0.5"/>
+                    <ellipse cx="490" cy="270" rx="38" ry="12" fill="#f4ede0" opacity="0.5"/>
+                    <!-- D-pad horizontal -->
+                    <rect x="148" y="148" width="108" height="42" rx="6"
+                          fill="url(#dpadGrad)" stroke="#111" stroke-width="3"/>
+                    <!-- D-pad vertical -->
+                    <rect x="181" y="115" width="42" height="108" rx="6"
+                          fill="url(#dpadGrad)" stroke="#111" stroke-width="3"/>
+                    <!-- D-pad center -->
+                    <circle cx="202" cy="169" r="16" fill="#1a1a1a" stroke="#111" stroke-width="2"/>
+                    <!-- D-pad arrows -->
+                    <polygon points="202,123 195,135 209,135" fill="#555"/>
+                    <polygon points="202,214 195,202 209,202" fill="#555"/>
+                    <polygon points="156,169 168,162 168,176" fill="#555"/>
+                    <polygon points="248,169 236,162 236,176" fill="#555"/>
+                    <!-- SELECT -->
+                    <rect x="278" y="178" width="52" height="18" rx="9"
+                          fill="#8a8278" stroke="#333" stroke-width="2.5"/>
+                    <text x="304" y="191" text-anchor="middle"
+                          font-family="'Press Start 2P', monospace"
+                          font-size="7" fill="#e8e0d0" font-weight="700">SELECT</text>
+                    <!-- START -->
+                    <rect x="350" y="178" width="52" height="18" rx="9"
+                          fill="#8a8278" stroke="#333" stroke-width="2.5"/>
+                    <text x="376" y="191" text-anchor="middle"
+                          font-family="'Press Start 2P', monospace"
+                          font-size="7" fill="#e8e0d0" font-weight="700">START</text>
+                    <!-- B button -->
+                    <circle cx="450" cy="180" r="26" fill="url(#buttonGrad)" stroke="#111" stroke-width="4"/>
+                    <ellipse cx="442" cy="170" rx="10" ry="6" fill="#ff5566" opacity="0.6"/>
+                    <text x="450" y="186" text-anchor="middle"
+                          font-family="Arial Black, sans-serif"
+                          font-size="20" font-weight="900" fill="#fcfcfc">B</text>
+                    <!-- A button -->
+                    <circle cx="516" cy="156" r="26" fill="url(#buttonGrad)" stroke="#111" stroke-width="4"/>
+                    <ellipse cx="508" cy="146" rx="10" ry="6" fill="#ff5566" opacity="0.6"/>
+                    <text x="516" y="162" text-anchor="middle"
+                          font-family="Arial Black, sans-serif"
+                          font-size="20" font-weight="900" fill="#fcfcfc">A</text>
+                    <!-- Decorative red strip with dots -->
+                    <rect x="240" y="100" width="200" height="38" rx="6"
+                          fill="#cc2233" stroke="#991122" stroke-width="3"/>
+                    <rect x="240" y="118" width="200" height="6" fill="#991122" opacity="0.6"/>
+                    <circle cx="310" cy="119" r="5" fill="#fcfcfc" opacity="0.7"/>
+                    <circle cx="340" cy="119" r="5" fill="#fcfcfc" opacity="0.7"/>
+                    <circle cx="370" cy="119" r="5" fill="#fcfcfc" opacity="0.7"/>
+                    <!-- Cord hole -->
+                    <rect x="317" y="278" width="46" height="10" rx="5"
+                          fill="#1a1a1a" stroke="#111" stroke-width="2"/>
+                    <!-- Star decoration -->
+                    <polygon points="340,60 344,72 356,72 347,79 350,91 340,84 330,91 333,79 324,72 336,72"
+                             fill="#F8B800" stroke="#c8900a" stroke-width="2"/>
+                </svg>
+            </div>
+
+            <!-- Hero text — right side -->
+            <div class="col-lg-5 col-md-6 text-center text-md-start store-content">
+                <h1>GameStore</h1>
+                <h4>When you level up,<br>we level up!!!</h4>
                 <br>
-                <p class="lead text-muted">
-                Browse our extensive collection of video games, tcgs, and more.
-                </p>
+                <p>Browse our extensive collection of video games, tcgs, and more.</p>
                 <br>
-        
-               {% if not user.is_authenticated %}
+                {% if not user.is_authenticated %}
                     <a href="{% url 'register' %}" class="btn btn-primary my-2">
                         <i class="fa fa-user-plus" aria-hidden="true"></i> &nbsp; Create an account
                     </a>
                 {% endif %}
+            </div>
+
         </div>
     </section>
 
-       <!-- All products section -->      
-       <div class="album py-5 bg-light">
+    <!-- All products section -->
+    <div class="album py-5 bg-light">
         <div class="container">
-          <div class="pb-3 h5"> All products </div>
-          <hr>
-          <br>
-          
-          <div class="row row-cols-1 row-cols-sm-2 row-cols-md-5 g-3">
-       
-            {% for product in my_products %}
-              <div class="col">
-                <div class="card shadow-sm">
-                  <img class="img-fluid" alt="Responsive image" src="{{product.image.url}}">
-                  <div class="card-body">                
-                    <p class="card-text">
-                      <a class="text-info text-decoration-none" href="{{product.get_absolute_url}}"> {{ product.title | capfirst }} </a>
-                    </p>
-                
-                    <div class="d-flex justify-content-between align-items-center">
-                      <h5> $ {{ product.price }} </h5>
+            <div class="pb-3 h5"> All products </div>
+            <hr>
+            <br>
+
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-5 g-3">
+
+                {% for product in my_products %}
+                    <div class="col">
+                        <div class="card shadow-sm">
+                            <img class="img-fluid" alt="Responsive image" src="{{product.image.url}}">
+                            <div class="card-body">
+                                <p class="card-text">
+                                    <a class="text-info text-decoration-none" href="{{product.get_absolute_url}}"> {{ product.title | capfirst }} </a>
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5> $ {{ product.price }} </h5>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            {% endfor %}
-            
-          </div>
+                {% endfor %}
+
+            </div>
         </div>
-      </div>
+    </div>
 
 {% endblock %}

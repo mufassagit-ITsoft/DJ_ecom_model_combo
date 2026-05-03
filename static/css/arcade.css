@@ -1,0 +1,531 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ARCADE.CSS — Super Mario Bros. NES Edition
+   Authentic NES color palette & pixel aesthetics for Gamestore
+   Global stylesheet loaded via base.html
+   ═══════════════════════════════════════════════════════════════════
+
+   NES Super Mario Bros. Color Palette:
+   --mario-sky      #5C94FC  Classic NES sky blue
+   --mario-red      #E43B44  Mario's hat & shirt
+   --mario-yellow   #F8B800  Coins & ? blocks
+   --mario-green    #3CB200  Pipes & Luigi
+   --mario-brown    #7C3B00  Ground & bricks
+   --mario-brick    #C84C0C  Brick block orange
+   --mario-dark     #1A1A1A  Near-black outlines
+   --mario-white    #FCFCFC  NES near-white
+   --mario-score    #000000  HUD background
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── CSS Variables ────────────────────────────────────────────────── */
+:root {
+    --mario-sky:      #5C94FC;
+    --mario-red:      #E43B44;
+    --mario-yellow:   #F8B800;
+    --mario-green:    #3CB200;
+    --mario-brown:    #7C3B00;
+    --mario-brick:    #C84C0C;
+    --mario-dark:     #1A1A1A;
+    --mario-white:    #FCFCFC;
+    --mario-coin:     #FAB000;
+    --mario-score:    #000000;
+    --mario-shadow:   3px 3px 0px #000000;
+    --mario-shadow-sm:2px 2px 0px #000000;
+    --pixel-font:     'Press Start 2P', cursive;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   GLOBAL BASE
+   ══════════════════════════════════════════════════════════════════ */
+
+body {
+    background-color: var(--mario-sky);
+    font-family: var(--pixel-font);
+    color: var(--mario-dark);
+}
+
+/* ── Headings ─────────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--pixel-font);
+    color: var(--mario-dark);
+    text-shadow: var(--mario-shadow);
+    line-height: 1.8;
+}
+
+h1 { font-size: 1.4rem; }
+h2 { font-size: 1.1rem; }
+h3 { font-size: 0.95rem; }
+h4 { font-size: 0.85rem; }
+h5 { font-size: 0.75rem; }
+h6 { font-size: 0.65rem; }
+
+/* ── Paragraphs — scoped to store containers only ─────────────────── */
+.jumbotron p,
+.product-area p,
+.store-content p,
+.card-body p,
+.album p {
+    font-family: var(--pixel-font);
+    font-size: 0.7rem;
+    line-height: 2;
+    color: var(--mario-dark);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   NAVBAR — NES HUD STYLE
+   Mimics the Mario score bar at the top of World 1-1
+   ══════════════════════════════════════════════════════════════════ */
+
+.navbar {
+    background-color: var(--mario-score) !important;
+    border-bottom: 4px solid var(--mario-yellow);
+    padding: 10px 20px;
+}
+
+.navbar-brand,
+.gamestore-brand {
+    font-family: var(--pixel-font) !important;
+    color: var(--mario-white) !important;
+    font-size: 0.85rem;
+    letter-spacing: 3px;
+    text-shadow: 2px 2px 0px var(--mario-red);
+    text-transform: uppercase;
+}
+
+.navbar-brand:hover,
+.gamestore-brand:hover {
+    color: var(--mario-yellow) !important;
+    text-shadow: 2px 2px 0px var(--mario-red);
+}
+
+.nav-link {
+    font-family: var(--pixel-font);
+    font-size: 0.6rem;
+    color: var(--mario-white) !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 8px 12px !important;
+    transition: color 0.1s;
+}
+
+.nav-link:hover {
+    color: var(--mario-yellow) !important;
+}
+
+.dropdown-menu {
+    background-color: var(--mario-score);
+    border: 3px solid var(--mario-yellow);
+    border-radius: 0;
+}
+
+.dropdown-item {
+    font-family: var(--pixel-font);
+    font-size: 0.6rem;
+    color: var(--mario-white);
+    padding: 10px 16px;
+    text-transform: uppercase;
+}
+
+.dropdown-item:hover {
+    background-color: var(--mario-red);
+    color: var(--mario-white);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   BUTTONS — QUESTION BLOCK STYLE
+   Yellow ? block with thick black border and pixel press effect
+   ══════════════════════════════════════════════════════════════════ */
+
+.btn {
+    font-family: var(--pixel-font);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 0;
+    border: 3px solid var(--mario-dark);
+    box-shadow: 4px 4px 0px var(--mario-dark);
+    padding: 10px 18px;
+    transition: all 0.08s;
+}
+
+.btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px var(--mario-dark);
+}
+
+.btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px var(--mario-dark);
+}
+
+/* Primary = ? Block yellow */
+.btn-primary {
+    background-color: var(--mario-yellow);
+    border-color: var(--mario-dark);
+    color: var(--mario-dark);
+}
+.btn-primary:hover {
+    background-color: var(--mario-coin);
+    border-color: var(--mario-dark);
+    color: var(--mario-dark);
+}
+
+/* Success = Pipe green */
+.btn-success {
+    background-color: var(--mario-green);
+    border-color: var(--mario-dark);
+    color: var(--mario-white);
+}
+.btn-success:hover {
+    background-color: #2d8f00;
+    border-color: var(--mario-dark);
+    color: var(--mario-white);
+}
+
+/* Danger = Mario red */
+.btn-danger {
+    background-color: var(--mario-red);
+    border-color: var(--mario-dark);
+    color: var(--mario-white);
+}
+.btn-danger:hover {
+    background-color: #c42d35;
+    border-color: var(--mario-dark);
+    color: var(--mario-white);
+}
+
+/* Secondary = Brick brown */
+.btn-secondary {
+    background-color: var(--mario-brick);
+    border-color: var(--mario-dark);
+    color: var(--mario-white);
+}
+.btn-secondary:hover {
+    background-color: var(--mario-brown);
+    border-color: var(--mario-dark);
+    color: var(--mario-white);
+}
+
+/* Outline variants */
+.btn-outline-primary {
+    border-color: var(--mario-yellow);
+    color: var(--mario-dark);
+    background-color: transparent;
+}
+.btn-outline-primary:hover {
+    background-color: var(--mario-yellow);
+    color: var(--mario-dark);
+}
+
+.btn-outline-danger {
+    border-color: var(--mario-red);
+    color: var(--mario-red);
+    background-color: transparent;
+}
+.btn-outline-danger:hover {
+    background-color: var(--mario-red);
+    color: var(--mario-white);
+}
+
+.btn-outline-secondary {
+    border-color: var(--mario-dark);
+    color: var(--mario-dark);
+    background-color: transparent;
+}
+.btn-outline-secondary:hover {
+    background-color: var(--mario-dark);
+    color: var(--mario-white);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CARDS — NES ITEM BOX STYLE
+   Thick pixel borders with lift-on-hover block effect
+   ══════════════════════════════════════════════════════════════════ */
+
+.card {
+    border: 4px solid var(--mario-dark);
+    border-radius: 0;
+    box-shadow: 6px 6px 0px var(--mario-dark);
+    background-color: var(--mario-white);
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.card:hover {
+    transform: translate(-3px, -3px);
+    box-shadow: 9px 9px 0px var(--mario-dark);
+}
+
+.card-body {
+    background-color: var(--mario-white);
+    padding: 1rem;
+}
+
+.card-title {
+    font-family: var(--pixel-font);
+    font-size: 0.7rem;
+    color: var(--mario-sky);
+    text-shadow: 1px 1px 0px var(--mario-dark);
+    line-height: 1.8;
+}
+
+.card-text {
+    font-family: var(--pixel-font);
+    font-size: 0.6rem;
+    color: var(--mario-dark);
+    line-height: 2;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CONTENT PANELS — BRICK BLOCK PANELS
+   White panels with NES-style thick borders
+   ══════════════════════════════════════════════════════════════════ */
+
+.container.bg-white,
+.bg-white {
+    background-color: var(--mario-white) !important;
+    border: 4px solid var(--mario-dark);
+    box-shadow: 6px 6px 0px var(--mario-dark);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ALERTS — NES MESSAGE BOX STYLE
+   ══════════════════════════════════════════════════════════════════ */
+
+.alert {
+    font-family: var(--pixel-font);
+    font-size: 0.65rem;
+    line-height: 2;
+    border: 3px solid var(--mario-dark);
+    border-radius: 0;
+    box-shadow: 4px 4px 0px var(--mario-dark);
+}
+
+.alert-success {
+    background-color: var(--mario-green);
+    color: var(--mario-white);
+    border-color: var(--mario-dark);
+}
+
+.alert-danger {
+    background-color: var(--mario-red);
+    color: var(--mario-white);
+    border-color: var(--mario-dark);
+}
+
+.alert-warning {
+    background-color: var(--mario-yellow);
+    color: var(--mario-dark);
+    border-color: var(--mario-dark);
+}
+
+.alert-info {
+    background-color: var(--mario-sky);
+    color: var(--mario-white);
+    border-color: var(--mario-dark);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   BADGE — COIN STYLE
+   ══════════════════════════════════════════════════════════════════ */
+
+.badge {
+    font-family: var(--pixel-font);
+    font-size: 0.55rem;
+    background-color: var(--mario-yellow) !important;
+    color: var(--mario-dark) !important;
+    border: 2px solid var(--mario-dark);
+    border-radius: 0;
+    padding: 4px 6px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   SEARCH BAR — NAVBAR ONLY
+   Dark background with yellow border — NES input box feel
+   ══════════════════════════════════════════════════════════════════ */
+
+#search-input,
+.search-input {
+    font-family: var(--pixel-font);
+    font-size: 0.6rem;
+    background-color: var(--mario-dark);
+    color: var(--mario-white);
+    border: 2px solid var(--mario-yellow);
+    border-radius: 0;
+    padding: 8px 12px;
+}
+
+#search-input::placeholder,
+.search-input::placeholder {
+    font-family: var(--pixel-font);
+    font-size: 0.6rem;
+    color: #888888;
+}
+
+#search-input:focus,
+.search-input:focus {
+    background-color: var(--mario-dark);
+    color: var(--mario-white);
+    border-color: var(--mario-yellow);
+    box-shadow: 0 0 0 2px var(--mario-yellow);
+    outline: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   PRICE & PRODUCT TITLE
+   ══════════════════════════════════════════════════════════════════ */
+
+.price {
+    font-family: var(--pixel-font);
+    color: var(--mario-dark);
+    font-size: 0.8rem;
+    text-shadow: 1px 1px 0px var(--mario-yellow);
+}
+
+.product-title {
+    font-family: var(--pixel-font);
+    color: var(--mario-sky);
+    text-shadow: var(--mario-shadow-sm);
+    font-size: 0.75rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   HR DIVIDERS — GROUND BLOCK STYLE
+   ══════════════════════════════════════════════════════════════════ */
+
+hr {
+    border: none;
+    border-top: 4px solid var(--mario-dark);
+    opacity: 1;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   LINKS
+   ══════════════════════════════════════════════════════════════════ */
+
+a {
+    color: var(--mario-sky);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--mario-yellow);
+    text-decoration: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TABLES
+   ══════════════════════════════════════════════════════════════════ */
+
+table {
+    font-family: var(--pixel-font);
+    font-size: 0.6rem;
+}
+
+th {
+    background-color: var(--mario-dark);
+    color: var(--mario-yellow);
+    text-transform: uppercase;
+    padding: 12px !important;
+    letter-spacing: 1px;
+}
+
+td {
+    padding: 10px !important;
+    border-color: var(--mario-dark) !important;
+    vertical-align: middle !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   FORMS — THEMED BUT READABLE
+   Mario palette borders and focus states, but system font for
+   data-entry readability on checkout, account, and shipping pages.
+   ══════════════════════════════════════════════════════════════════ */
+
+.form-control,
+.form-select {
+    font-family: inherit;
+    font-size: 0.9rem;
+    border: 3px solid var(--mario-dark);
+    border-radius: 0;
+    background-color: var(--mario-white);
+    color: var(--mario-dark);
+    -webkit-font-smoothing: auto;
+    -moz-osx-font-smoothing: auto;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--mario-yellow);
+    box-shadow: 0 0 0 3px rgba(248, 184, 0, 0.4);
+    background-color: var(--mario-white);
+    color: var(--mario-dark);
+    outline: none;
+}
+
+label,
+.form-label {
+    font-family: var(--pixel-font);
+    font-size: 0.65rem;
+    color: var(--mario-dark);
+    line-height: 2;
+}
+
+.form-text,
+small {
+    font-family: inherit;
+    font-size: 0.75rem;
+    color: #555555;
+    -webkit-font-smoothing: auto;
+}
+
+.form-check-label {
+    font-family: var(--pixel-font);
+    font-size: 0.6rem;
+    line-height: 2;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   FONT SMOOTHING
+   Disabled only for pixel font elements — never for forms or body
+   ══════════════════════════════════════════════════════════════════ */
+
+.navbar-brand,
+.gamestore-brand,
+.nav-link,
+.dropdown-item,
+.btn,
+.badge,
+.alert,
+.card-title,
+.card-text,
+.price,
+.product-title,
+label,
+.form-check-label,
+h1, h2, h3, h4, h5, h6,
+.jumbotron p,
+.product-area p,
+.store-content p,
+.card-body p,
+.album p {
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   SCROLLBAR — NES STYLE
+   ══════════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar { width: 12px; }
+
+::-webkit-scrollbar-track {
+    background: var(--mario-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--mario-yellow);
+    border: 2px solid var(--mario-dark);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--mario-coin);
+}
