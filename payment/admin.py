@@ -5,8 +5,159 @@ from django.utils import timezone
 from django.contrib import messages
 from .models import ShippingAddress, Order, OrderItem, RefundRequest, RefundItem
 
-admin.site.register(ShippingAddress)
-admin.site.register(Order)
+@admin.register(ShippingAddress)
+class ShippingAddressAdmin(admin.ModelAdmin):
+    list_display = [
+        'id',
+        'full_name',
+        'username',
+        'email',
+        'city',
+        'state',
+        'zipcode',
+    ]
+    search_fields = [
+        'full_name',
+        'email',
+        'city',
+        'state',
+        'zipcode',
+        'user__username',
+    ]
+    list_filter = ['state', 'city']
+    readonly_fields = [
+        'full_name',
+        'email',
+        'address1',
+        'address2',
+        'city',
+        'state',
+        'zipcode',
+        'user',
+    ]
+
+    fieldsets = (
+        ('Customer', {
+            'fields': ('user', 'full_name', 'email')
+        }),
+        ('Address', {
+            'fields': ('address1', 'address2', 'city', 'state', 'zipcode')
+        }),
+    )
+
+    def username(self, obj):
+        if obj.user:
+            return obj.user.username
+        return 'Guest'
+    username.short_description = 'Username'
+    username.admin_order_field = 'user__username'
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user')
+
+
+class OrderItemInline(admin.TabularInline):
+    """
+    Shows all items within an order directly on the Order detail page
+    """
+    model = OrderItem
+    extra = 0
+    readonly_fields = ['product', 'quantity', 'price', 'line_total', 'user']
+    fields = ['product', 'quantity', 'price', 'line_total', 'user']
+    can_delete = False
+
+    def line_total(self, obj):
+        return f'${float(obj.price * obj.quantity):.2f}'
+    line_total.short_description = 'Line Total'
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = [
+        'id',
+        'customer_name',
+        'username',
+        'amount_paid_display',
+        'item_count',
+        'date_ordered',
+        'refund_status',
+    ]
+    list_filter = ['date_ordered', 'user']
+    search_fields = [
+        'id',
+        'full_name',
+        'email',
+        'user__username',
+    ]
+    readonly_fields = [
+        'full_name',
+        'email',
+        'shipping_address',
+        'amount_paid',
+        'date_ordered',
+        'user',
+    ]
+    date_hierarchy = 'date_ordered'
+    ordering = ['-date_ordered']
+    inlines = [OrderItemInline]
+
+    fieldsets = (
+        ('Order Information', {
+            'fields': ('user', 'date_ordered')
+        }),
+        ('Customer Details', {
+            'fields': ('full_name', 'email')
+        }),
+        ('Payment', {
+            'fields': ('amount_paid',)
+        }),
+        ('Shipping Address', {
+            'fields': ('shipping_address',),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def customer_name(self, obj):
+        return obj.full_name
+    customer_name.short_description = 'Customer Name'
+    customer_name.admin_order_field = 'full_name'
+
+    def username(self, obj):
+        if obj.user:
+            return obj.user.username
+        return 'Guest'
+    username.short_description = 'Username'
+    username.admin_order_field = 'user__username'
+
+    def amount_paid_display(self, obj):
+        return f'${float(obj.amount_paid):.2f}'
+    amount_paid_display.short_description = 'Amount Paid'
+    amount_paid_display.admin_order_field = 'amount_paid'
+
+    def item_count(self, obj):
+        count = obj.orderitem_set.count()
+        return f'{count} item(s)'
+    item_count.short_description = 'Items'
+
+    def refund_status(self, obj):
+        refund = obj.refund_requests.filter(
+            status__in=['PENDING_RETURN', 'PRODUCT_RECEIVED', 'PROCESSING_REFUND']
+        ).first()
+        if refund:
+            return refund.get_status_display()
+        completed = obj.refund_requests.filter(status='COMPLETED').first()
+        if completed:
+            return 'Refund Completed'
+        return 'No Refund'
+    refund_status.short_description = 'Refund Status'
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user').prefetch_related(
+            'orderitem_set', 'refund_requests'
+        )
 
 
 @admin.register(OrderItem)
