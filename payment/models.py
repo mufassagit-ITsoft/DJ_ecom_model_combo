@@ -222,7 +222,7 @@ def process_rewards_refund(refund_request):
                 order=refund_request.order,
                 order_total=refund_request.order.amount_paid,
                 points_earned=-earned_transaction.points_earned,  # Negative - removing points
-                transaction_type='ADJUSTMENT',
+                transaction_type='ADMIN_ADJUSTMENT',
                 description=f'Rewards deducted due to refund of order #{refund_request.order.id}'
             )
             

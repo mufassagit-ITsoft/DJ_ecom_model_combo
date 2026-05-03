@@ -2,8 +2,6 @@
 
 {% load static %}
 
-{% load mathfilters %}
-
 {% block content %}
 
 <main class="pt-5">    
@@ -47,7 +45,7 @@
             <div class="col border-bottom">
                 <div class="row p-3">
                 <div class="col-6"> Product </div>
-                <div class="col-6 text-end"><span class="h6 fw-bold">$ {{product.price|mul:item.qty}} </span></div>
+                <div class="col-6 text-end"><span class="h6 fw-bold">$ {{item.total|floatformat:2}} </span></div>
               </div>            
             </div>
     
@@ -99,7 +97,7 @@
 
     <!-- LP -->
       <div class="col-12 text-end">
-        <div class="h6 fw-bold"> Total price: $ <div id="total" class="d-inline-flex"> {{cart.get_total}} </div>
+        <div class="h6 fw-bold"> Total price: $ <div id="total" class="d-inline-flex"> {{cart.get_total|floatformat:2}} </div>
     </div>
         <br>
         <a href="{% url 'checkout' %}" class="btn btn-primary my-2"> <i class="fa fa-chevron-circle-right" aria-hidden="true"></i> &nbsp; Proceed to checkout </a>
