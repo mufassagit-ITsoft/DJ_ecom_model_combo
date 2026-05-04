@@ -32,6 +32,8 @@ ALLOWED_HOSTS = [
     'localhost',
     ]
 
+RENDER_HOSTNAME=config('RENDER_HOSTNAME')
+
 
 # Application definition
 
