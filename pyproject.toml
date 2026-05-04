@@ -17,7 +17,10 @@ dependencies = [
     "crispy-bootstrap5 (>=2026.3,<2027.0)",
     "django-six (>=1.0.5,<2.0.0)",
     "six (>=1.17.0,<2.0.0)",
-    "django-mathfilters (>=1.0.0,<2.0.0)"
+    "psycopg2-binary (>=2.9.12,<3.0.0)",
+    "gunicorn (>=25.3.0,<26.0.0)",
+    "whitenoise (>=6.12.0,<7.0.0)",
+    "dj-database-url (>=3.1.2,<4.0.0)",
 ]
 
 
