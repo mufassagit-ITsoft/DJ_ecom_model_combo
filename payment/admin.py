@@ -1,65 +1,38 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from django.urls import reverse
 from django.utils import timezone
 from django.contrib import messages
-from .models import ShippingAddress, Order, OrderItem, RefundRequest, RefundItem
+from .models import (
+    ShippingAddress, Order, OrderItem,
+    RefundRequest, RefundItem,
+    send_refund_status_email,
+    restock_refunded_items,
+    process_rewards_refund,
+    restore_used_rewards,
+    issue_paypal_refund,
+)
 
 @admin.register(ShippingAddress)
 class ShippingAddressAdmin(admin.ModelAdmin):
-    list_display = [
-        'id',
-        'full_name',
-        'username',
-        'email',
-        'city',
-        'state',
-        'zipcode',
-    ]
-    search_fields = [
-        'full_name',
-        'email',
-        'city',
-        'state',
-        'zipcode',
-        'user__username',
-    ]
+    list_display = ['id', 'full_name', 'username', 'email', 'city', 'state', 'zipcode']
+    search_fields = ['full_name', 'email', 'city', 'state', 'zipcode', 'user__username']
     list_filter = ['state', 'city']
-    readonly_fields = [
-        'full_name',
-        'email',
-        'address1',
-        'address2',
-        'city',
-        'state',
-        'zipcode',
-        'user',
-    ]
+    readonly_fields = ['full_name', 'email', 'address1', 'address2', 'city', 'state', 'zipcode', 'user']
 
     fieldsets = (
-        ('Customer', {
-            'fields': ('user', 'full_name', 'email')
-        }),
-        ('Address', {
-            'fields': ('address1', 'address2', 'city', 'state', 'zipcode')
-        }),
+        ('Customer', {'fields': ('user', 'full_name', 'email')}),
+        ('Address',  {'fields': ('address1', 'address2', 'city', 'state', 'zipcode')}),
     )
 
     def username(self, obj):
-        if obj.user:
-            return obj.user.username
-        return 'Guest'
+        return obj.user.username if obj.user else 'Guest'
     username.short_description = 'Username'
     username.admin_order_field = 'user__username'
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user')
 
-
 class OrderItemInline(admin.TabularInline):
-    """
-    Shows all items within an order directly on the Order detail page
-    """
     model = OrderItem
     extra = 0
     readonly_fields = ['product', 'quantity', 'price', 'line_total', 'user']
@@ -77,28 +50,15 @@ class OrderItemInline(admin.TabularInline):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = [
-        'id',
-        'customer_name',
-        'username',
-        'amount_paid_display',
-        'item_count',
-        'date_ordered',
-        'refund_status',
+        'id', 'customer_name', 'username',
+        'amount_paid_display', 'item_count',
+        'has_paypal_id', 'date_ordered', 'refund_status',
     ]
     list_filter = ['date_ordered', 'user']
-    search_fields = [
-        'id',
-        'full_name',
-        'email',
-        'user__username',
-    ]
+    search_fields = ['id', 'full_name', 'email', 'user__username', 'paypal_transaction_id']
     readonly_fields = [
-        'full_name',
-        'email',
-        'shipping_address',
-        'amount_paid',
-        'date_ordered',
-        'user',
+        'full_name', 'email', 'shipping_address',
+        'amount_paid', 'date_ordered', 'user', 'paypal_transaction_id',
     ]
     date_hierarchy = 'date_ordered'
     ordering = ['-date_ordered']
@@ -112,7 +72,7 @@ class OrderAdmin(admin.ModelAdmin):
             'fields': ('full_name', 'email')
         }),
         ('Payment', {
-            'fields': ('amount_paid',)
+            'fields': ('amount_paid', 'paypal_transaction_id')
         }),
         ('Shipping Address', {
             'fields': ('shipping_address',),
@@ -126,9 +86,7 @@ class OrderAdmin(admin.ModelAdmin):
     customer_name.admin_order_field = 'full_name'
 
     def username(self, obj):
-        if obj.user:
-            return obj.user.username
-        return 'Guest'
+        return obj.user.username if obj.user else 'Guest'
     username.short_description = 'Username'
     username.admin_order_field = 'user__username'
 
@@ -138,9 +96,15 @@ class OrderAdmin(admin.ModelAdmin):
     amount_paid_display.admin_order_field = 'amount_paid'
 
     def item_count(self, obj):
-        count = obj.orderitem_set.count()
-        return f'{count} item(s)'
+        return f'{obj.orderitem_set.count()} item(s)'
     item_count.short_description = 'Items'
+
+    def has_paypal_id(self, obj):
+        """Shows whether a PayPal transaction ID was stored — required for programmatic refunds"""
+        if obj.paypal_transaction_id:
+            return '✓ Yes'
+        return '✗ No'
+    has_paypal_id.short_description = 'PayPal ID Stored'
 
     def refund_status(self, obj):
         refund = obj.refund_requests.filter(
@@ -159,27 +123,15 @@ class OrderAdmin(admin.ModelAdmin):
             'orderitem_set', 'refund_requests'
         )
 
-
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
     list_display = [
-        'id',
-        'order_link',
-        'customer_name',
-        'username',
-        'product',
-        'quantity',
-        'unit_price_display',
-        'line_total_display',
-        'date_sold',
+        'id', 'order_link', 'customer_name', 'username',
+        'product', 'quantity', 'unit_price_display',
+        'line_total_display', 'date_sold',
     ]
     list_filter = ['order__date_ordered', 'product']
-    search_fields = [
-        'order__id',
-        'order__full_name',
-        'user__username',
-        'product__title',
-    ]
+    search_fields = ['order__id', 'order__full_name', 'user__username', 'product__title']
     readonly_fields = ['order', 'product', 'quantity', 'price', 'user']
     ordering = ['-order__date_ordered']
 
@@ -194,9 +146,7 @@ class OrderItemAdmin(admin.ModelAdmin):
     customer_name.admin_order_field = 'order__full_name'
 
     def username(self, obj):
-        if obj.user:
-            return obj.user.username
-        return 'Guest'
+        return obj.user.username if obj.user else 'Guest'
     username.short_description = 'Username'
     username.admin_order_field = 'user__username'
 
@@ -215,59 +165,40 @@ class OrderItemAdmin(admin.ModelAdmin):
     date_sold.admin_order_field = 'order__date_ordered'
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related(
-            'order', 'product', 'user'
-        )
+        return super().get_queryset(request).select_related('order', 'product', 'user')
 
-# Refund Admin
 
 class RefundItemInline(admin.TabularInline):
     model = RefundItem
     extra = 0
     readonly_fields = ['order_item', 'quantity_to_refund', 'refund_amount']
-    fields = ['order_item', 'quantity_to_refund', 'refund_amount', 
-              'condition_acceptable', 'condition_notes', 'restocked']
-    
-    def has_add_permission(self, request, obj=None):
-        return False  # Items are added when refund request is created
-    
-    class Meta:
-        help_text = "Note: Items are automatically marked as 'condition acceptable' when you use the 'Mark product received & restock' action. Uncheck any items that are damaged or not acceptable before processing."
+    fields = [
+        'order_item', 'quantity_to_refund', 'refund_amount',
+        'condition_acceptable', 'condition_notes', 'restocked'
+    ]
 
+    def has_add_permission(self, request, obj=None):
+        return False
 
 @admin.register(RefundRequest)
 class RefundRequestAdmin(admin.ModelAdmin):
     list_display = [
-        'id',
-        'order_id_simple',
-        'customer_info',
-        'customer_type',       # Guest vs Registered
-        'refund_amount_simple',
-        'status_simple',
-        'verification_status', # Admin-verified gate
-        'reason',
-        'created_at',
+        'id', 'order_id_simple', 'customer_info', 'customer_type',
+        'refund_amount_simple', 'status_simple', 'verification_status',
+        'reason', 'created_at',
     ]
-    
-    list_filter = ['status', 'reason', 'created_at']
+    list_filter = ['status', 'reason', 'admin_verified', 'created_at']
     search_fields = ['order__id', 'customer_email', 'customer_name', 'user__username']
     date_hierarchy = 'created_at'
-    
+
     readonly_fields = [
-        'order',
-        'user',
-        'customer_email',
-        'customer_name',
-        'refund_amount',
-        'rewards_used',
-        'created_at',
-        'updated_at',
-        'product_received_at',
-        'refund_completed_at',
-        'verified_by',
-        'verified_at',
+        'order', 'user', 'customer_email', 'customer_name',
+        'refund_amount', 'rewards_used',
+        'created_at', 'updated_at',
+        'product_received_at', 'refund_completed_at',
+        'verified_by', 'verified_at',
     ]
-    
+
     fieldsets = (
         ('Order Information', {
             'fields': ('order', 'user', 'customer_name', 'customer_email')
@@ -281,13 +212,8 @@ class RefundRequestAdmin(admin.ModelAdmin):
         ('PayPal Refund', {
             'fields': ('paypal_refund_id', 'refund_completed_at')
         }),
-        ('⚠ Admin Verification (Required Before Processing)', {
+        ('Admin Verification (Required Before Processing)', {
             'fields': ('admin_verified', 'verified_by', 'verified_at'),
-            'description': (
-                'The administrator MUST verify this refund request before any payment processing actions '
-                'can proceed. Use the "Verify & approve refund requests" action from the list view, '
-                'or check the box below. Applies to both guest and registered-user orders.'
-            ),
         }),
         ('Admin Management', {
             'fields': ('admin_notes', 'rejection_reason')
@@ -297,99 +223,62 @@ class RefundRequestAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    
+
     inlines = [RefundItemInline]
-    
+
     actions = [
-        'verify_refund_requests',   # Must run FIRST before processing actions
+        'verify_refund_requests',
         'mark_product_received',
-        'manual_restock_items',
         'process_paypal_refund',
         'complete_refund',
+        'reject_refund',
         'restore_rewards_goodwill',
-        'reject_refund'
     ]
-    
-    # SIMPLIFIED METHODS - NO FORMAT_HTML AT ALL
 
-    def customer_type(self, obj):
-        """Indicate whether this is a guest or registered-user refund"""
-        try:
-            return "Registered" if obj.user else "Guest"
-        except Exception as e:
-            return f"Error: {e}"
-    customer_type.short_description = 'Customer Type'
-
-    def verification_status(self, obj):
-        """Show whether the admin has verified this refund request"""
-        try:
-            if obj.admin_verified:
-                verified_by = f" by {obj.verified_by.username}" if obj.verified_by else ""
-                return f"VERIFIED{verified_by}"
-            return "NOT VERIFIED"
-        except Exception as e:
-            return f"Error: {e}"
-    verification_status.short_description = 'Admin Verified'
-    
     def order_id_simple(self, obj):
-        """Simple order ID - plain text, no formatting"""
         try:
-            if obj and obj.order and obj.order.id:
-                return f"Order #{obj.order.id}"
-            return "-"
-        except Exception as e:
-            return f"Error: {e}"
+            return f'Order #{obj.order.id}'
+        except Exception:
+            return '-'
     order_id_simple.short_description = 'Order'
-    
+
     def customer_info(self, obj):
-        """Display customer information"""
         try:
             if obj.user:
-                return f"{obj.user.username} ({obj.customer_email})"
-            return f"Guest ({obj.customer_email})"
-        except Exception as e:
-            return f"Error: {e}"
+                return f'{obj.user.username} ({obj.customer_email})'
+            return f'Guest ({obj.customer_email})'
+        except Exception:
+            return '-'
     customer_info.short_description = 'Customer'
-    
+
+    def customer_type(self, obj):
+        return 'Registered' if obj.user else 'Guest'
+    customer_type.short_description = 'Type'
+
     def refund_amount_simple(self, obj):
-        """Simple refund amount display"""
-        try:
-            amount = f"${float(obj.refund_amount):.2f}"
-            if obj.rewards_used > 0:
-                amount += f" (Rewards: ${float(obj.rewards_used):.2f})"
-            return amount
-        except Exception as e:
-            return f"Error: {e}"
+        amount = f'${float(obj.refund_amount):.2f}'
+        if obj.rewards_used > 0:
+            amount += f' (Rewards: ${float(obj.rewards_used):.2f})'
+        return amount
     refund_amount_simple.short_description = 'Refund Amount'
-    
+
     def status_simple(self, obj):
-        """Simple status display"""
-        try:
-            return obj.get_status_display()
-        except Exception as e:
-            return f"Error: {e}"
+        return obj.get_status_display()
     status_simple.short_description = 'Status'
-    
-    # ═══════════════════════════════════════════════════════════════════
-    # ADMIN ACTIONS
-    # ═══════════════════════════════════════════════════════════════════
+
+    def verification_status(self, obj):
+        if obj.admin_verified:
+            by = f' by {obj.verified_by.username}' if obj.verified_by else ''
+            return f'VERIFIED{by}'
+        return 'NOT VERIFIED'
+    verification_status.short_description = 'Admin Verified'
 
     def verify_refund_requests(self, request, queryset):
         """
-        Step 0: Admin explicitly verifies and approves refund requests.
-
-        This MUST be done before 'process_paypal_refund' or 'complete_refund'
-        can run. Applies to both guest and registered-user orders.
-
-        What to check before verifying:
-          - Order ID and customer email match
-          - Refund reason is valid and items are listed correctly
-          - Guest orders: confirm email matches the original order record
-          - Registered orders: confirm the order belongs to the user account
+        STEP 1 — Verify and approve refund requests.
+        Must run before any processing action can proceed.
         """
         already_verified = queryset.filter(admin_verified=True)
-        to_verify = queryset.filter(admin_verified=False)
-
         if already_verified.exists():
             self.message_user(
                 request,
@@ -398,7 +287,9 @@ class RefundRequestAdmin(admin.ModelAdmin):
             )
 
         updated = 0
-        for refund in to_verify.exclude(status__in=['COMPLETED', 'REJECTED', 'CANCELLED']):
+        for refund in queryset.filter(admin_verified=False).exclude(
+            status__in=['COMPLETED', 'REJECTED', 'CANCELLED']
+        ):
             refund.admin_verified = True
             refund.verified_by = request.user
             refund.verified_at = timezone.now()
@@ -408,131 +299,173 @@ class RefundRequestAdmin(admin.ModelAdmin):
         if updated:
             self.message_user(
                 request,
-                f'{updated} refund request(s) verified by {request.user.username}. '
-                f'You may now proceed with "Mark product received" → "Mark as processing" → "Complete refund".',
+                f'{updated} refund request(s) verified. Proceed with "Mark product received".',
                 level=messages.SUCCESS
             )
         else:
-            self.message_user(
-                request,
-                'No eligible refund requests to verify.',
-                level=messages.WARNING
-            )
-    verify_refund_requests.short_description = '✔ Verify & approve refund requests (run FIRST)'
+            self.message_user(request, 'No eligible refund requests to verify.', level=messages.WARNING)
+    verify_refund_requests.short_description = '(1) Verify & approve refund requests'
 
     def mark_product_received(self, request, queryset):
-        """Mark selected refunds as product received"""
-        from .models import restock_refunded_items
-        
+        """
+        STEP 2 — Mark product as received, auto-restock acceptable items,
+        and email the customer that their return has arrived.
+        """
+        unverified = queryset.filter(status='PENDING_RETURN', admin_verified=False)
+        if unverified.exists():
+            ids = ', '.join(f'#{r.id}' for r in unverified)
+            self.message_user(
+                request,
+                f'Cannot proceed: refund(s) {ids} are not yet verified. Run Step 1 first.',
+                level=messages.ERROR
+            )
+            return
+
         updated = 0
-        for refund in queryset.filter(status='PENDING_RETURN'):
+        for refund in queryset.filter(status='PENDING_RETURN', admin_verified=True):
             refund.status = 'PRODUCT_RECEIVED'
             refund.product_received_at = timezone.now()
             refund.save()
-            
-            # Automatically mark all items as acceptable condition (admin can manually change later if needed)
+
+            # Auto-mark items as acceptable and restock
             refund.items.all().update(condition_acceptable=True)
-            
-            # Restock items if condition acceptable
             try:
                 restock_refunded_items(refund)
             except Exception as e:
                 self.message_user(
                     request,
-                    f'Error restocking items for refund #{refund.id}: {e}',
+                    f'Error restocking refund #{refund.id}: {e}',
                     level=messages.ERROR
                 )
-            
+
+            # ── GAP 2 FIX: Email customer at this stage ────────────────
+            send_refund_status_email(
+                refund,
+                subject=f'Return Received — Refund #{refund.id} Being Processed',
+                body=(
+                    f'Hi {refund.customer_name},\n\n'
+                    f'Great news! We have received your returned item(s) for '
+                    f'Order #{refund.order.id}.\n\n'
+                    f'We are now processing your refund of ${refund.refund_amount:.2f}.\n\n'
+                    f'You will receive another email once the PayPal refund has been issued. '
+                    f'This typically takes 3-5 business days to appear in your account.\n\n'
+                    f'Refund Request ID: #{refund.id}'
+                )
+            )
+
             updated += 1
-        
+
         self.message_user(
             request,
-            f'{updated} refund(s) marked as product received and items restocked.',
+            f'{updated} refund(s) marked as product received. Items restocked. Customers notified.',
             level=messages.SUCCESS
         )
-    mark_product_received.short_description = '✓ Mark product received & restock'
-    
-    def manual_restock_items(self, request, queryset):
-        """Manually restock items for refunds where products have been received"""
-        from .models import restock_refunded_items
-        
-        restocked_count = 0
-        for refund in queryset.filter(status__in=['PRODUCT_RECEIVED', 'PROCESSING_REFUND', 'COMPLETED']):
-            try:
-                # This will restock any items marked as condition_acceptable that haven't been restocked yet
-                restock_refunded_items(refund)
-                restocked_count += 1
-            except Exception as e:
-                self.message_user(
-                    request,
-                    f'Error restocking items for refund #{refund.id}: {e}',
-                    level=messages.ERROR
-                )
-        
-        if restocked_count > 0:
-            self.message_user(
-                request,
-                f'Manually restocked items for {restocked_count} refund(s).',
-                level=messages.SUCCESS
-            )
-        else:
-            self.message_user(
-                request,
-                'No items were restocked. Items may already be restocked or not marked as acceptable condition.',
-                level=messages.WARNING
-            )
-    manual_restock_items.short_description = '🔄 Manually restock acceptable items'
-    
-    def process_paypal_refund(self, request, queryset):
-        """Process PayPal refund (manual - admin must do this in PayPal)"""
+    mark_product_received.short_description = '(2) Mark product received & restock'
 
-        # ── Verification gate ──────────────────────────────────────────
+    def process_paypal_refund(self, request, queryset):
+        """
+        STEP 3 — Issue the actual PayPal refund via PayPal REST API.
+
+        GAP 1 FIX: Previously just changed the status and told admin to
+        go do it manually in PayPal. Now calls the PayPal API directly.
+
+        Requires:
+        - PAYPAL_SECRET in environment variables
+        - order.paypal_transaction_id was stored at checkout
+
+        Orders without a stored PayPal transaction ID (placed before this
+        fix was deployed) will show an error and must be refunded manually
+        in the PayPal dashboard.
+        """
         unverified = queryset.filter(status='PRODUCT_RECEIVED', admin_verified=False)
         if unverified.exists():
             ids = ', '.join(f'#{r.id}' for r in unverified)
             self.message_user(
                 request,
-                f'Cannot process: refund(s) {ids} have NOT been admin-verified. '
-                f'Run "Verify & approve refund requests" first.',
+                f'Cannot proceed: refund(s) {ids} are not yet verified. Run Step 1 first.',
                 level=messages.ERROR
             )
             return
-        # ──────────────────────────────────────────────────────────────
 
-        updated = 0
+        success_count = 0
+        manual_count  = 0
+        error_count   = 0
+
         for refund in queryset.filter(status='PRODUCT_RECEIVED', admin_verified=True):
-            refund.status = 'PROCESSING_REFUND'
-            refund.save()
-            updated += 1
-        
-        self.message_user(
-            request,
-            f'{updated} refund(s) marked as processing. Please process refunds in PayPal dashboard and enter transaction IDs.',
-            level=messages.WARNING
-        )
-    process_paypal_refund.short_description = '→ Mark as processing PayPal refund'
-    
-    def complete_refund(self, request, queryset):
-        """Complete the refund process"""
-        from .models import process_rewards_refund
+            success, paypal_refund_id, error_msg = issue_paypal_refund(refund)
 
-        # ── Verification gate ──────────────────────────────────────────
+            if success:
+                refund.status = 'PROCESSING_REFUND'
+                refund.paypal_refund_id = paypal_refund_id
+                refund.save()
+
+                # ── Notify customer PayPal refund was issued ───────────
+                send_refund_status_email(
+                    refund,
+                    subject=f'PayPal Refund Issued — Refund #{refund.id}',
+                    body=(
+                        f'Hi {refund.customer_name},\n\n'
+                        f'Your PayPal refund of ${refund.refund_amount:.2f} has been issued '
+                        f'for Order #{refund.order.id}.\n\n'
+                        f'PayPal Refund ID: {paypal_refund_id}\n\n'
+                        f'The refund should appear in your PayPal account within '
+                        f'3-5 business days depending on your payment method.\n\n'
+                        f'Refund Request ID: #{refund.id}'
+                    )
+                )
+                success_count += 1
+
+            elif 'manually' in error_msg.lower() or 'before this fix' in error_msg.lower():
+                # No transaction ID — needs manual PayPal processing
+                refund.status = 'PROCESSING_REFUND'
+                refund.save()
+                self.message_user(
+                    request,
+                    f'Refund #{refund.id}: {error_msg}',
+                    level=messages.WARNING
+                )
+                manual_count += 1
+
+            else:
+                self.message_user(
+                    request,
+                    f'Refund #{refund.id} PayPal error: {error_msg}',
+                    level=messages.ERROR
+                )
+                error_count += 1
+
+        if success_count:
+            self.message_user(
+                request,
+                f'{success_count} PayPal refund(s) issued successfully. Customers notified.',
+                level=messages.SUCCESS
+            )
+        if manual_count:
+            self.message_user(
+                request,
+                f'{manual_count} refund(s) need manual PayPal processing (no transaction ID stored). '
+                f'After processing in PayPal, enter the refund ID and run "Complete refund".',
+                level=messages.WARNING
+            )
+    process_paypal_refund.short_description = '(3) Issue PayPal refund via API'
+
+    def complete_refund(self, request, queryset):
+        """
+        STEP 4 — Mark refund as completed, deduct earned rewards,
+        and send the customer a final confirmation email.
+        """
         unverified = queryset.filter(status='PROCESSING_REFUND', admin_verified=False)
         if unverified.exists():
             ids = ', '.join(f'#{r.id}' for r in unverified)
             self.message_user(
                 request,
-                f'Cannot complete: refund(s) {ids} have NOT been admin-verified. '
-                f'Run "Verify & approve refund requests" first.',
+                f'Cannot complete: refund(s) {ids} are not yet verified.',
                 level=messages.ERROR
             )
             return
-        # ──────────────────────────────────────────────────────────────
 
         updated = 0
         for refund in queryset.filter(status='PROCESSING_REFUND', admin_verified=True):
-            # Process rewards adjustments for registered users
-            # NOTE: This ONLY deducts earned rewards, does NOT restore used rewards
             if refund.user:
                 try:
                     process_rewards_refund(refund)
@@ -543,116 +476,129 @@ class RefundRequestAdmin(admin.ModelAdmin):
                         level=messages.ERROR
                     )
                     continue
-            
+
             refund.status = 'COMPLETED'
             refund.refund_completed_at = timezone.now()
             refund.save()
+
+            # ── GAP 2 FIX: Final completion email to customer ──────────
+            send_refund_status_email(
+                refund,
+                subject=f'Refund Complete — Refund #{refund.id}',
+                body=(
+                    f'Hi {refund.customer_name},\n\n'
+                    f'Your refund of ${refund.refund_amount:.2f} for '
+                    f'Order #{refund.order.id} has been fully processed.\n\n'
+                    + (
+                        f'PayPal Refund ID: {refund.paypal_refund_id}\n\n'
+                        if refund.paypal_refund_id else ''
+                    ) +
+                    f'The funds should already be available or will appear in your '
+                    f'PayPal account within 1-3 business days.\n\n'
+                    f'Thank you for shopping with us. We hope to serve you again!'
+                )
+            )
+
             updated += 1
-        
+
         self.message_user(
             request,
-            f'{updated} refund(s) completed successfully. Earned rewards have been deducted. '
-            f'Used rewards were NOT restored (use "Restore rewards as goodwill" if approved).',
+            f'{updated} refund(s) completed. Rewards adjusted. Customers notified by email.',
             level=messages.SUCCESS
         )
-    complete_refund.short_description = '✓ Complete refund & adjust rewards'
-    
+    complete_refund.short_description = '(4) Complete refund & notify customer'
+
     def reject_refund(self, request, queryset):
-        """Reject selected refund requests"""
-        updated = queryset.exclude(status__in=['COMPLETED', 'REJECTED']).update(
-            status='REJECTED'
-        )
-        
+        """Reject selected refund requests and notify the customer."""
+        updated = 0
+        for refund in queryset.exclude(status__in=['COMPLETED', 'REJECTED', 'CANCELLED']):
+            refund.status = 'REJECTED'
+            refund.save()
+
+            send_refund_status_email(
+                refund,
+                subject=f'Refund Request #{refund.id} — Decision',
+                body=(
+                    f'Hi {refund.customer_name},\n\n'
+                    f'After reviewing your refund request #{refund.id} for '
+                    f'Order #{refund.order.id}, we are unable to approve this refund.\n\n'
+                    + (
+                        f'Reason: {refund.rejection_reason}\n\n'
+                        if refund.rejection_reason else ''
+                    ) +
+                    f'If you have questions, please contact our support team and '
+                    f'reference Refund Request ID: #{refund.id}.'
+                )
+            )
+            updated += 1
+
         self.message_user(
             request,
-            f'{updated} refund(s) rejected. Please add rejection reason in admin notes.',
+            f'{updated} refund(s) rejected. Customers notified.',
             level=messages.WARNING
         )
-    reject_refund.short_description = '✗ Reject refund request'
-    
+    reject_refund.short_description = 'Reject selected refund requests'
+
     def restore_rewards_goodwill(self, request, queryset):
         """
-        Manually restore used rewards as a goodwill gesture (ADMIN APPROVAL REQUIRED)
-        
-        Use this ONLY for special cases:
-        - Defective products (not customer's fault)
-        - Company errors (wrong item sent)
-        - Goodwill gestures for valued customers
-        
-        DO NOT use for normal returns or changed mind refunds.
+        Admin-only goodwill action: restore used rewards.
+        Only for defective products, company errors, or special cases.
         """
-        from .models import restore_used_rewards
-        
-        restored_count = 0
-        no_rewards_count = 0
-        already_restored_count = 0
-        guest_count = 0
-        
+        restored = 0
+        skipped  = 0
+
         for refund in queryset:
-            # Check if this is a guest order
-            if not refund.user:
-                guest_count += 1
-                continue
-            
-            # Check if rewards were used
-            if refund.rewards_used <= 0:
-                no_rewards_count += 1
-                continue
-            
-            # Try to restore rewards
-            success = restore_used_rewards(refund)
-            if success:
-                restored_count += 1
+            result = restore_used_rewards(refund)
+            if result:
+                restored += 1
+
+                send_refund_status_email(
+                    refund,
+                    subject=f'Rewards Restored — Order #{refund.order.id}',
+                    body=(
+                        f'Hi {refund.customer_name},\n\n'
+                        f'As a goodwill gesture, we have restored ${refund.rewards_used:.2f} '
+                        f'in rewards points to your account.\n\n'
+                        f'These points are now available for use on your next purchase.\n\n'
+                        f'Thank you for your patience and understanding.'
+                    )
+                )
             else:
-                already_restored_count += 1
-        
-        # Build message
-        messages_list = []
-        if restored_count > 0:
-            messages_list.append(f'{restored_count} customer(s) had ${sum([r.rewards_used for r in queryset if r.user and r.rewards_used > 0]):.2f} in rewards restored')
-        if already_restored_count > 0:
-            messages_list.append(f'{already_restored_count} already had rewards restored')
-        if no_rewards_count > 0:
-            messages_list.append(f'{no_rewards_count} had no rewards used in original purchase')
-        if guest_count > 0:
-            messages_list.append(f'{guest_count} were guest orders (no rewards to restore)')
-        
-        if restored_count > 0:
+                skipped += 1
+
+        if restored:
             self.message_user(
                 request,
-                'Rewards restored as goodwill gesture: ' + ', '.join(messages_list),
+                f'Rewards restored for {restored} customer(s). Customers notified.',
                 level=messages.SUCCESS
             )
-        else:
+        if skipped:
             self.message_user(
                 request,
-                'No rewards restored: ' + ', '.join(messages_list),
+                f'{skipped} skipped (already restored, no rewards used, or guest orders).',
                 level=messages.WARNING
             )
-    restore_rewards_goodwill.short_description = '💝 Restore used rewards as goodwill (ADMIN APPROVAL)'
+    restore_rewards_goodwill.short_description = 'Restore rewards as goodwill gesture (admin only)'
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'order', 'user', 'verified_by'
+        ).prefetch_related('items')
 
 @admin.register(RefundItem)
 class RefundItemAdmin(admin.ModelAdmin):
     list_display = [
-        'id',
-        'refund_request',
-        'product_name',
-        'quantity_to_refund',
-        'refund_amount',
-        'condition_acceptable',
-        'restocked'
+        'id', 'refund_request', 'product_name',
+        'quantity_to_refund', 'refund_amount',
+        'condition_acceptable', 'restocked'
     ]
-    
     list_filter = ['condition_acceptable', 'restocked']
     search_fields = ['refund_request__id', 'order_item__product__title']
-    
     readonly_fields = ['refund_request', 'order_item', 'quantity_to_refund', 'refund_amount']
-    
+
     def product_name(self, obj):
-        """Display product name"""
         try:
             return obj.order_item.product.title
-        except Exception as e:
-            return f"Error: {e}"
+        except Exception:
+            return '-'
     product_name.short_description = 'Product'

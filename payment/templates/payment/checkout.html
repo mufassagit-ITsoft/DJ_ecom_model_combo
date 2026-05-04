@@ -218,10 +218,6 @@
 
 <!-- JavaScript -->
 <script>
-    // ═══════════════════════════════════════════════════════════════════
-    // REWARDS REDEMPTION LOGIC
-    // ═══════════════════════════════════════════════════════════════════
-    
     // Store cart total from backend
     const originalTotal = parseFloat('{{ cart.get_total|floatformat:2 }}');
     const availableRewards = parseFloat('{{ reward_account.total_points|default:"0.00"|floatformat:2 }}');
@@ -288,10 +284,6 @@
             $('#rewardsAppliedLine').addClass('hidden');
         }
     }
-
-    // ═══════════════════════════════════════════════════════════════════
-    // PAYPAL INTEGRATION (WITH REWARDS SUPPORT)
-    // ═══════════════════════════════════════════════════════════════════
 
     const paypalButtonsComponent = paypal.Buttons({
         style: {
@@ -369,8 +361,9 @@
             const captureOrderHandler = (details) => {
                 const payerName = details.payer.name.given_name;
                 console.log('Transaction completed');
-
-                // ↓↓↓ IMPORTANT: Pass rewards_applied to backend ↓↓↓
+                const paypalCaptureId = details.purchase_units[0].payments.captures[0].id;
+                console.log('PayPal Capture ID:', paypalCaptureId);
+ 
                 $.ajax({
                     type: 'POST',
                     url: '{% url "complete-order" %}',
@@ -382,7 +375,8 @@
                         city: $('#city').val(),
                         state: $('#state').val(),
                         zipcode: $('#zipcode').val(),
-                        rewards_applied: appliedRewardsAmount.toFixed(2),  // ← NEW: Send rewards amount
+                        rewards_applied: appliedRewardsAmount.toFixed(2),
+                        paypal_transaction_id: paypalCaptureId,   // ← NEW
                         csrfmiddlewaretoken: "{{csrf_token}}",
                         action: 'post'
                     },
