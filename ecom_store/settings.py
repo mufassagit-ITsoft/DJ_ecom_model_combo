@@ -68,9 +68,6 @@ CLOUDINARY_STORAGE = {
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-#CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
-CRISPY_TEMPLATE_PACK = "bootstrap5"
-
 SECURE_CROSS_ORIGIN_OPENER_POLICY='same-origin-allow-popups'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
