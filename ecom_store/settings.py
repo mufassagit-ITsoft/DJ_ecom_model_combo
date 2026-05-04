@@ -51,8 +51,19 @@ INSTALLED_APPS = [
     #'mathfilters,',
     'crispy_forms',
     'crispy_bootstrap5',
+    # CDN for image upload
+    'cloudinary',
+    'cloudinary_storage',
 ]
 SITE_ID = 1
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': config('CLOUDINARY_API_KEY'),
+    'API_SECRET': config('CLOUDINARY_API_SECRET'),
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 #CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
