@@ -30,6 +30,7 @@ DEBUG = config('DEBUG', cast=bool)
 ALLOWED_HOSTS = [
     '127.0.0.1:8000/',
     'localhost',
+    'https://dj-ecom-model-combo.onrender.com/'
     ]
 
 RENDER_HOSTNAME=config('RENDER_HOSTNAME')
