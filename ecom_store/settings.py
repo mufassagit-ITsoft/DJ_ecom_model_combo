@@ -30,11 +30,11 @@ DEBUG = config('DEBUG', cast=bool)
 ALLOWED_HOSTS = [
     '127.0.0.1:8000/',
     'localhost',
-    'dj-ecom-model-combo.onrender.com/'
     ]
 
-RENDER_HOSTNAME=config('RENDER_HOSTNAME')
-
+RENDER_HOSTNAME = config('RENDER_HOSTNAME', default='')
+if RENDER_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_HOSTNAME)
 
 # Application definition
 
