@@ -25,7 +25,10 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    # Cloudinary CDN
+    'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary',
     'django.contrib.sites',
     # Project apps
     'store',
@@ -35,9 +38,6 @@ INSTALLED_APPS = [
     # Supplemental
     'crispy_forms',
     'crispy_bootstrap5',
-    # Cloudinary CDN
-    'cloudinary',
-    'cloudinary_storage',
 ]
 
 SITE_ID = 1

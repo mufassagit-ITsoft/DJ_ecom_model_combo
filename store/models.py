@@ -1,6 +1,7 @@
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+from cloudinary.models import CloudinaryField
 
 class Topic(models.Model):
     name = models.CharField(max_length=250, db_index=True)
@@ -45,7 +46,8 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     slug = models.SlugField(max_length=255)
     price = models.DecimalField(max_digits=4, decimal_places=2)
-    image = models.ImageField(upload_to='images/')
+    #image = models.ImageField(upload_to='images/')
+    image = CloudinaryField('image', folder='gamestore/products/')
     # Inventory and Sales Tracking Fields
     date_uploaded = models.DateTimeField(auto_now_add=True, help_text="Date when product was first added")
     quantity_available = models.IntegerField(default=0, help_text="Current stock available")
