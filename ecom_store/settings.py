@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     # Supplemental
     'crispy_forms',
     'crispy_bootstrap5',
+    # backup db
+    'sync'
 ]
 
 SITE_ID = 1
@@ -95,6 +97,7 @@ TEMPLATES = [
 ]
 
 DATABASE_URL = config('DATABASE_URL', default=None)
+BACKUP_DATABASE_URL = config('BACKUP_DATABASE_URL', default=None)
 
 if DATABASE_URL:
     DATABASES = {
@@ -102,15 +105,35 @@ if DATABASE_URL:
             default=DATABASE_URL,
             conn_max_age=600,
             ssl_require=not DEBUG,
+        ),
+    }
+    if BACKUP_DATABASE_URL:
+        DATABASES['backup'] = dj_database_url.parse(
+            BACKUP_DATABASE_URL,
+            conn_max_age=600,
         )
+        DATABASES['backup']['OPTIONS'] = {'sslmode': 'require'} if not DEBUG else {}
+        DATABASES['separate'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': Path('/home/mufassa/Documents/Compfiles/python/Django/gamestore_combo_db/separate_db.sqlite3'),
     }
 else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
-        }
+        },
+        'backup': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'backup_db.sqlite3',
+        },
+        'separate': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': Path('/home/mufassa/Documents/Compfiles/python/Django/gamestore_combo_db/separate_db.sqlite3'),
+        },
     }
+
+DATABASE_ROUTERS = ['sync.router.BackupRouter']
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
