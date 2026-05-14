@@ -1,3 +1,5 @@
+# For ecom_store app README file, see the README.md file at the
+# root level file. 
 
 from pathlib import Path
 from decouple import config

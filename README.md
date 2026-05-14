@@ -1,3 +1,7 @@
+Authored by Mustafizur Prodhan
+Date started (from prototype): 12/20/2025
+Date Deployed: 5/8/2026
+
 # Gamestore — Django E-Commerce Project
 
 A full-stack Django e-commerce application for selling video games, trading card games, and more. Built with Django 6.0, PostgreSQL, Cloudinary CDN, PayPal payments, and a Super Mario Bros. NES-themed frontend.
@@ -476,6 +480,8 @@ Admin: `http://127.0.0.1:8000/admin`
 
 ### 8a — Create `build.sh` at project root
 
+The build.sh file is a shell script that Render runs automatically every time you deploy your application. It executes all the preparation steps needed to make your Django app ready to serve traffic before Gunicorn starts.
+
 ```bash
 #!/usr/bin/env bash
 set -o errexit
@@ -488,12 +494,111 @@ Make it executable:
 ```bash
 chmod +x build.sh
 ```
+Line by Line
+
+#!/usr/bin/env bash
+Called a shebang line. Tells the operating system to run this file using the Bash shell. Without it, the system would not know how to interpret the commands that follow.
+
+set -o errexit
+Tells Bash to stop immediately if any command fails. Without this, the script would continue running even if pip install failed — potentially deploying a broken app. With it, a failure at any step aborts the entire build and Render marks the deployment as failed rather than serving a broken application.
+
+pip install -r requirements.txt
+Installs all Python packages your project needs. Render's build environment starts fresh on every deploy, so every dependency must be installed each time. This reads from requirements.txt which was exported from Poetry:
+
+    poetry export -f requirements.txt --output requirements.txt --without-hashes
+
+python manage.py collectstatic --no-input
+Gathers all static files — CSS, JavaScript, fonts, images from STATICFILES_DIRS — and copies them into the STATIC_ROOT directory (staticfiles/). WhiteNoise then serves them from there in production.
+
+The --no-input flag suppresses the interactive confirmation prompt that Django normally shows when overwriting existing static files — required in automated environments where there is no human to press Enter.
+
+python manage.py migrate
+Applies any pending database migrations to the PostgreSQL database on Render. This ensures your database schema is always in sync with your models before the app starts serving traffic. If you add a new model field and push to GitHub, the migration runs automatically on the next deploy without any manual intervention.
+
+The Full Deployment Sequence on Render
+
+You push code to GitHub
+        ↓
+Render detects the push
+        ↓
+Render runs build.sh
+    ├── pip install -r requirements.txt
+    ├── python manage.py collectstatic --no-input
+    └── python manage.py migrate
+        ↓
+Build succeeds
+        ↓
+Render reads Procfile
+        ↓
+Render starts: gunicorn ecom_store.wsgi:application
+        ↓
+App is live and serving traffic
+
+If build.sh fails at any step, Render halts the deployment and keeps the previous working version running — meaning your live site stays up even if a bad deployment is pushed.
+
+Why It Must Be Executable
+Before Render can run build.sh, the file must have execute permissions set:
+
+    chmod +x build.sh
+
+Without this, Render would see the file but be unable to run it, causing the build to fail immediately. This is set once locally and committed to Git — the permission is preserved in the repository.
+
+Configured on Render
+In your Render Web Service settings the Build Command is pointed at this file:
+
+    Build Command: ./build.sh
+
+
+The ./ prefix means "run this file from the current directory" — necessary because build.sh is not a system command, it is a file in your project root.
 
 ### 8b — Create `Procfile` at project root
+
+The Procfile is a plain text file that tells Render (and other platforms like Heroku) how to start your web application. It defines the process types your app runs and the exact command used to start each one.
 
 ```
 web: gunicorn ecom_store.wsgi:application
 ```
+This one line contains two parts:
+web — the process type. Render recognises web as the process that receives HTTP traffic from the internet. It automatically assigns it a port and routes incoming requests to it.
+
+gunicorn ecom_store.wsgi:application — the command that starts your application server. 
+
+Breaking it down further:
+
+gunicorn: The production WSGI server that runs your Django app
+
+ecom_store: The Django project package name — the folder containing settings.py and wsgi.py
+
+wsgi: The wsgi.py module inside that package
+
+application: The WSGI callable object inside wsgi.py that Gunicorn calls to handle each request
+
+Why Not Just Use manage.py runserver
+Django's runserver is a development-only tool. It is single-threaded, has no request queuing, serves one request at a time, and Django explicitly documents it as unsafe for production.
+Gunicorn is a production-grade WSGI server that:
+
+    - Handles multiple concurrent requests using worker processes
+    - Manages worker lifecycle and restarts crashed workers
+    - Integrates with Render's port and process management
+    - Is battle-tested at scale
+
+What Happens on Render
+When you deploy, Render reads the Procfile and runs the web command to start your application. The sequence is:
+
+Render reads Procfile
+        ↓
+Runs: gunicorn ecom_store.wsgi:application
+        ↓
+Gunicorn loads ecom_store/wsgi.py
+        ↓
+wsgi.py initialises Django with your settings
+        ↓
+Gunicorn spawns worker processes
+        ↓
+Workers listen for HTTP requests on the assigned port
+        ↓
+Render routes incoming traffic to those workers
+Without the Procfile, Render would not know how to start your application and the deployment would fail.
 
 ### 8c — Push to GitHub
 
@@ -568,5 +673,65 @@ ecom_combo/
 ---
 
 ## License
+- ** MIT during developmental cycle
+
+The MIT License is one of the most permissive and widely used open source software licenses in existence. It originates from the Massachusetts Institute of Technology and has been the default license for countless open source projects including Django itself, jQuery, React, and many of the packages in your Gamestore project.
+
+What It Grants
+In plain language, the MIT License gives anyone who receives your code four core freedoms:
+FreedomMeaningUseRun the software for any purpose — personal, commercial, governmentModifyChange the source code however you wantDistributeShare the original or modified version with anyoneSublicenseRe-license your modified version under different terms
+The only condition attached to all of these is that the original copyright notice and license text must be included in any copy or substantial portion of the software distributed.
+
+What It Does Not Grant
+The MIT License is explicit about what it does not cover:
+No warranty — the software is provided as-is. If it breaks something, causes data loss, or fails in production, the original author bears no legal responsibility. This is the AS IS clause in the license text.
+No trademark rights — using MIT-licensed code does not give you the right to use the original author's name, logo, or brand to endorse your product.
+No patent rights — MIT does not explicitly grant patent rights, which is a distinction from licenses like Apache 2.0 that do.
+
+In Development
+When you use MIT-licensed packages during development, the license requires nothing from you beyond keeping the license text intact when you distribute software that includes those packages. In practice this means:
+Your pyproject.toml and requirements.txt list packages like Django, WhiteNoise, and Cloudinary. All of these carry their own MIT or compatible licenses. You are free to build commercial software on top of them, charge customers for it, and keep your own source code completely private — MIT places no restriction on any of this.
+If you were building an open source project and distributing your source code, you would include the license texts of your dependencies, typically handled automatically by package managers.
+
+In Production
+
+Deploying MIT-licensed code to production on Render, selling products through your Gamestore, and charging customers for those products is entirely permitted. The MIT License has no revenue clause, no attribution requirement in your UI, and no obligation to open source your own code.
+The practical production implications are:
+You keep full ownership of your code. The MIT License on your dependencies does not transfer any ownership of your original work. Your Gamestore application, its business logic, its database schema, and its custom CSS theme are yours entirely.
+No copyleft obligation. Unlike the GPL license, MIT does not require you to release your source code if you distribute or deploy software that incorporates MIT-licensed components. You can build on Django and keep your entire codebase proprietary.
+No royalties. No package author can claim a percentage of revenue generated by software built on their MIT-licensed work.
+
+MIT vs Other Common Licenses
+
+LicenseCan use commerciallyMust open source your codeMust include licensePatent grantMITYesNoYesNoApache 2.0YesNoYesYesGPL v3YesYesYesYesBSD 2-ClauseYesNoYesNoProprietaryOnly if purchasedNoNoNo
+
+Relevance to evoGames LLC
+
+For evoGames LLC operating as a commercial entity, MIT is the most favorable type of license to encounter in your dependency stack because it imposes essentially no obligations on your business. Your store, your customer data, your payment flows, and your branding are all yours to protect however you choose while freely building on the open source ecosystem beneath them.
+If you release any of your own tools or utilities publicly — such as the Tkinter datastore GUI or the barcode scanning integration — applying the MIT License to those would allow the developer community to use and improve them while you retain the copyright and credit.MIT
+
+MIT License Agreement
+
+MIT License
+
+Copyright (c) [year] [your name or organization]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 © 2026 evoGames LLC. All rights reserved.
