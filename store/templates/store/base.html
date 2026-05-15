@@ -9,6 +9,7 @@
         <!-- CSS -->        
         <link rel="stylesheet" href="https://bootswatch.com/5/flatly/bootstrap.min.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -76,7 +77,171 @@
         {% endblock %}
     
         
+        <footer id="site-footer">
+            <style>
+                #site-footer {
+                    background-color: #000000;
+                    border-top: 4px solid #F8B800;
+                    padding: 32px 0 20px 0;
+                    margin-top: 48px;
+                    font-family: 'Press Start 2P', monospace;
+                    text-align: center;
+                }
 
+                /* Social icons row */
+                .footer-socials {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 28px;
+                    margin-bottom: 24px;
+                    flex-wrap: wrap;
+                }
+
+                .footer-social-link {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 48px;
+                    height: 48px;
+                    border: 3px solid #F8B800;
+                    background-color: #1A1A1A;
+                    color: #F8B800;
+                    font-size: 20px;
+                    text-decoration: none;
+                    transition: all 0.1s;
+                    box-shadow: 4px 4px 0px #F8B800;
+                    border-radius: 0;
+                }
+
+                .footer-social-link:hover {
+                    background-color: #F8B800;
+                    color: #000000;
+                    transform: translate(-2px, -2px);
+                    box-shadow: 6px 6px 0px #c8900a;
+                    text-decoration: none;
+                }
+
+                /* Platform-specific hover colours */
+                .footer-social-link.facebook:hover  { background-color: #1877F2; border-color: #1877F2; color: #fff; box-shadow: 6px 6px 0px #0d5bb5; }
+                .footer-social-link.instagram:hover { background: linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); border-color: #dc2743; color: #fff; box-shadow: 6px 6px 0px #8b0000; }
+                .footer-social-link.tiktok:hover    { background-color: #010101; border-color: #69C9D0; color: #69C9D0; box-shadow: 6px 6px 0px #00f2ea; }
+                .footer-social-link.x-twitter:hover { background-color: #000000; border-color: #ffffff; color: #ffffff; box-shadow: 6px 6px 0px #555555; }
+
+                /* Social label below icon */
+                .footer-social-item {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .footer-social-label {
+                    font-family: 'Press Start 2P', monospace;
+                    font-size: 6px;
+                    color: #888888;
+                    letter-spacing: 1px;
+                    text-transform: uppercase;
+                }
+
+                /* Divider */
+                .footer-divider {
+                    border: none;
+                    border-top: 2px solid #333333;
+                    width: 60%;
+                    margin: 0 auto 20px auto;
+                }
+
+                /* Copyright */
+                .footer-copyright {
+                    font-family: 'Press Start 2P', monospace;
+                    font-size: 7px;
+                    color: #555555;
+                    letter-spacing: 1px;
+                    line-height: 2;
+                    margin: 0;
+                }
+
+                .footer-copyright span {
+                    color: #F8B800;
+                }
+
+                /* Responsive — stack on very small screens */
+                @media (max-width: 400px) {
+                    .footer-social-link {
+                        width: 40px;
+                        height: 40px;
+                        font-size: 16px;
+                    }
+                    .footer-socials { gap: 16px; }
+                }
+            </style>
+
+            <!-- Social Media Icons -->
+            <div class="footer-socials">
+
+                <!-- Facebook -->
+                <div class="footer-social-item">
+                    <a href="https://www.facebook.com/evogamesllc"
+                       class="footer-social-link facebook"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       aria-label="Follow evoGames on Facebook">
+                        <i class="fa-brands fa-facebook-f"></i>
+                    </a>
+                    <span class="footer-social-label">Facebook</span>
+                </div>
+
+                <!-- Instagram -->
+                <div class="footer-social-item">
+                    <a href="https://www.instagram.com/evogamesllc"
+                       class="footer-social-link instagram"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       aria-label="Follow evoGames on Instagram">
+                        <i class="fa-brands fa-instagram"></i>
+                    </a>
+                    <span class="footer-social-label">Instagram</span>
+                </div>
+
+                <!-- TikTok -->
+                <div class="footer-social-item">
+                    <a href="https://www.tiktok.com/@evogamesllc"
+                       class="footer-social-link tiktok"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       aria-label="Follow evoGames on TikTok">
+                        <i class="fa-brands fa-tiktok"></i>
+                    </a>
+                    <span class="footer-social-label">TikTok</span>
+                </div>
+
+                <!-- X (formerly Twitter) -->
+                <div class="footer-social-item">
+                    <a href="https://www.x.com/evogamesllc"
+                       class="footer-social-link x-twitter"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       aria-label="Follow evoGames on X">
+                        <i class="fa-brands fa-x-twitter"></i>
+                    </a>
+                    <span class="footer-social-label">X</span>
+                </div>
+
+            </div>
+
+            <!-- Divider -->
+            <hr class="footer-divider">
+
+            <!-- Copyright -->
+            <p class="footer-copyright">
+                &copy; <span>2026 evoGames LLC</span> &nbsp;&bull;&nbsp; All Rights Reserved
+                <br><br>
+                Made with &#10084; for gamers everywhere
+            </p>
+
+        </footer>
+        
 
     </body>
 
