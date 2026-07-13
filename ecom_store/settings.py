@@ -177,3 +177,8 @@ if not DEBUG:
     SECURE_HSTS_SECONDS             = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS  = True
     SECURE_HSTS_PRELOAD             = True
+
+# UPCitemdb barcode lookup API
+UPCITEMDB_API_URL = config('UPCITEMDB_API_URL',
+    default='https://api.upcitemdb.com/prod/trial/lookup')
+UPCITEMDB_TIMEOUT = config('UPCITEMDB_TIMEOUT', cast=int, default=5)
