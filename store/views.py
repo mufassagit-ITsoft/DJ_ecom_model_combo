@@ -1,9 +1,11 @@
 from django.shortcuts import render
+from django.conf import settings
 from . models import Category, Product, Topic
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.template.loader import render_to_string
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+import requests
 
 
 def store(request):
@@ -84,3 +86,122 @@ def search_products(request):
         'product_count': products.count()
     }
     return render(request, 'store/search-results.html', context)
+
+def barcode_lookup(request):
+    """
+    Look up a UPC code against:
+    1. Local database first (existing products)
+    2. UPCitemdb public API as fallback (pre-fills new product forms)
+
+    Returns JSON with product data or an error message.
+    Free tier: 100 lookups/day — sufficient for admin use.
+    """
+    upc = request.GET.get('upc', '').strip()
+
+    if not upc:
+        return JsonResponse({'error': 'No UPC code provided.'}, status=400)
+
+    # Step 1 — check local database
+    try:
+        product = Product.objects.get(upc_code=upc)
+        return JsonResponse({
+            'source': 'local',
+            'found_locally': True,
+            'product': {
+                'id':          product.id,
+                'title':       product.title,
+                'brand':       product.brand,
+                'price':       str(product.price),
+                'description': product.description,
+                'upc_code':    product.upc_code,
+                'slug':        product.slug,
+                'url':         product.get_absolute_url(),
+                'in_stock':    product.is_in_stock(),
+                'quantity':    product.quantity_available,
+            }
+        })
+    except Product.DoesNotExist:
+        pass
+
+    # Step 2 — UPCitemdb API lookupB
+
+    api_url = settings.UPCITEMDB_API_URL
+    timeout = settings.UPCITEMD_TIMEOUT
+
+    try:
+        response = requests.get(
+            f'{api_url}?upc={upc}',
+            headers={'Accept': 'application/json'},
+            timeout=5
+        )
+        data = response.json()
+
+        if data.get('code') == 'OK' and data.get('items'):
+            item = data['items'][0]
+            price = ''
+            offers = item.get('offers', [])
+            if offers:
+                prices = [
+                    float(o['price']) for o in offers
+                    if o.get('price') and float(o['price']) > 0
+                ]
+                if prices:
+                    price = str(round(min(prices), 2))
+            images = item.get('images', [])
+            return JsonResponse({
+                'source':        'upcitemdb',
+                'found_locally': False,
+                'product': {
+                    'title':       item.get('title', ''),
+                    'brand':       item.get('brand', ''),
+                    'description': item.get('description', ''),
+                    'price':       price,
+                    'upc_code':    upc,
+                    'image_url':   images[0] if images else '',
+                    'model':       item.get('model', ''),
+                }
+            })
+        else:
+            return JsonResponse({
+                'source':        'upcitemdb',
+                'found_locally': False,
+                'product':       None,
+                'message':       f'UPC {upc} not found in registry. Enter details manually.'
+            })
+
+    except requests.exceptions.Timeout:
+        return JsonResponse({
+            'error': 'External UPC lookup timed out. Enter product details manually.'
+        }, status=504)
+    except Exception as e:
+        return JsonResponse({'error': f'UPC lookup failed: {str(e)}'}, status=500)
+
+
+def barcode_scanner_page(request):
+    """Standalone barcode scanner page for customers."""
+    return render(request, 'store/barcode-scanner.html')
+
+
+def upc_product_search(request):
+    """
+    AJAX endpoint: find a product by exact UPC match.
+    Used by the storefront scanner to redirect to the product page.
+    """
+    upc = request.GET.get('upc', '').strip()
+    if not upc:
+        return JsonResponse({'found': False, 'message': 'No UPC provided.'})
+    try:
+        product = Product.objects.get(upc_code=upc)
+        return JsonResponse({
+            'found':    True,
+            'url':      product.get_absolute_url(),
+            'title':    product.title,
+            'brand':    product.brand,
+            'price':    str(product.price),
+            'in_stock': product.is_in_stock(),
+        })
+    except Product.DoesNotExist:
+        return JsonResponse({
+            'found':   False,
+            'message': f'No product found for UPC: {upc}'
+        })

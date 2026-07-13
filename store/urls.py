@@ -14,4 +14,7 @@ urlpatterns = [
     path('brand/<str:brand_name>/', views.list_brand, name='list-brand'),
     # Search products
     path('search-products/', views.search_products, name='search-products'),
+    path('barcode/lookup/', views.barcode_lookup, name='barcode-lookup'),
+    path('barcode/scan/', views.barcode_scanner_page, name='barcode-scanner'),
+    path('barcode/search/', views.upc_product_search, name='upc-product-search'),
 ]
