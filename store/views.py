@@ -126,7 +126,7 @@ def barcode_lookup(request):
     # Step 2 — UPCitemdb API lookupB
 
     api_url = settings.UPCITEMDB_API_URL
-    timeout = settings.UPCITEMD_TIMEOUT
+    timeout = settings.UPCITEMDB_TIMEOUT
 
     try:
         response = requests.get(
