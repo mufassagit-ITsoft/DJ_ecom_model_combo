@@ -26,12 +26,13 @@ def mirror_save(instance):
     _syncing.add(key)
     try:
         for db in BACKUP_DB:
-            instance.save(using=db)
-    except Exception as e:
-        logger.error(
-            '[Backup Sync] Save failed for %s (pk=%s): %s',
-            instance.__class__.__name__, instance.pk, e
-        )
+            try:
+                instance.save(using=db)
+            except Exception as e:
+                logger.error(
+                    '[Backup Sync] Save failed for %s (pk=%s) on db=%s: %s',
+                    instance.__class__.__name__, instance.pk, db, e
+                )
     finally:
         _syncing.discard(key)
 
@@ -41,14 +42,14 @@ def mirror_delete(instance):
     Delete an instance from the backup database by pk.
     Errors are logged but never crash the primary delete.
     """
-    try:
-        for db in BACKUP_DB:
+    for db in BACKUP_DB:
+        try:
             type(instance).objects.using(db).filter(pk=instance.pk).delete()
-    except Exception as e:
-        logger.error(
-            '[Backup Sync] Delete failed for %s (pk=%s): %s',
-            instance.__class__.__name__, instance.pk, e
-        )
+        except Exception as e:
+            logger.error(
+                '[Backup Sync] Delete failed for %s (pk=%s) on db=%s: %s',
+                instance.__class__.__name__, instance.pk, db, e
+            )
 
 @receiver(post_save, sender=User)
 def sync_user_save(sender, instance, **kwargs):

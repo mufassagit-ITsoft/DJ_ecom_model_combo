@@ -43,15 +43,18 @@ class Command(BaseCommand):
             self.stdout.write(f'  Syncing {label} ({count} records)...')
 
             for instance in queryset.iterator():
-                try:
-                    for db in BACKUP_DB:
+                instance_errors = 0
+                for db in BACKUP_DB:
+                    try:
                         instance.save(using=db)
+                    except Exception as e:
+                        instance_errors += 1
+                        errors += 1
+                        self.stderr.write(
+                            f'    ERROR syncing {label} pk={instance.pk} on db={db}: {e}'
+                        )
+                if instance_errors == 0:
                     synced += 1
-                except Exception as e:
-                    errors += 1
-                    self.stderr.write(
-                        f'    ERROR syncing {label} pk={instance.pk}: {e}'
-                    )
 
             total_synced += synced
             total_errors += errors
