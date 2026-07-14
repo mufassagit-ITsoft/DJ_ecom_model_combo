@@ -12,6 +12,8 @@ from store.models import Product
 from decimal import Decimal
 from account.models import award_points_for_order, RewardAccount, RewardTransaction
 from django.contrib import messages
+from django.core.mail import EmailMessage
+from payment.invoice import generate_invoice_pdf
 
 
 def checkout(request):
@@ -222,16 +224,77 @@ def complete_order(request):
                     f'🎁 REWARDS EARNED: ${rewards_earned:.2f}\n'
                     'Check your dashboard to see your rewards balance!\n'
                 )
-
-            send_mail(
-                'Order received',
-                email_body,
-                settings.EMAIL_HOST_USER,
-                [email],
-                fail_silently=False
+        except:
+            print("Check the email")
+        try:
+            # Collect order items for the invoice
+            saved_order_items = OrderItem.objects.filter(order=order)
+ 
+            # Generate PDF invoice
+            pdf_bytes = generate_invoice_pdf(
+                order=order,
+                order_items=saved_order_items,
+                rewards_earned=rewards_earned,
+                rewards_redeemed=float(rewards_redeemed),
             )
+ 
+            # Build email body
+            email_body = (
+                f'Dear {name},\n\n'
+                f'Thank you for your purchase at evoGames! '
+                f'We are thrilled to have you as a customer.\n\n'
+                f'Your order has been successfully placed and is now being processed.\n\n'
+                f'ORDER SUMMARY\n'
+                f'{"─" * 40}\n'
+                f'Order ID     : #{order_id}\n'
+                f'Items        : {", ".join(product_list)}\n'
+            )
+ 
+            if rewards_redeemed > 0:
+                email_body += (
+                    f'Subtotal     : ${float(original_total):.2f}\n'
+                    f'Rewards Used : -${float(rewards_redeemed):.2f}\n'
+                    f'Amount Paid  : ${float(total_cost):.2f}\n'
+                )
+            else:
+                email_body += f'Amount Paid  : ${float(total_cost):.2f}\n'
+ 
+            email_body += f'Payment      : PayPal\n\n'
+ 
+            if rewards_earned > 0:
+                email_body += (
+                    f'REWARDS EARNED\n'
+                    f'{"─" * 40}\n'
+                    f'You earned ${rewards_earned:.2f} in rewards points '
+                    f'on this order! Your updated balance is visible on your dashboard.\n\n'
+                )
+ 
+            email_body += (
+                f'Your PDF invoice receipt is attached to this email. '
+                f'Please keep it for your records.\n\n'
+                f'If you have any questions about your order, please contact us '
+                f'through our website.\n\n'
+                f'When you level up, we level up!!!\n\n'
+                f'The evoGames Team\n'
+                f'https://dj-ecom-model-combo.onrender.com'
+            )
+ 
+            # Compose email with PDF attachment
+            email_message = EmailMessage(
+                subject=f'evoGames — Order #{order_id} Confirmed',
+                body=email_body,
+                from_email=settings.EMAIL_HOST_USER,
+                to=[email],
+            )
+            email_message.attach(
+                filename=f'evoGames_Invoice_Order_{order_id}.pdf',
+                content=pdf_bytes,
+                mimetype='application/pdf',
+            )
+            email_message.send(fail_silently=False)
+ 
         except Exception as e:
-            print(f"Email sending failed: {e}")
+            print(f'Order confirmation email failed: {e}')
 
         response_data = {
             'success':      True,

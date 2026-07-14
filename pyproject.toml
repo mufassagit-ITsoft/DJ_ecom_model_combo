@@ -23,9 +23,13 @@ dependencies = [
     "dj-database-url (>=3.1.2,<4.0.0)",
     "cloudinary (>=1.44.2,<2.0.0)",
     "django-cloudinary-storage (>=0.3.0,<0.4.0)",
+    "reportlab (>=3.6.0) ; python_version >= \"3.12\" and python_version < \"4\"",
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+reportlab = ">=3.6.0"
