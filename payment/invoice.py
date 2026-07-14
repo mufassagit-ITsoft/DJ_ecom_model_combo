@@ -10,6 +10,7 @@ Usage:
     pdf_bytes = generate_invoice_pdf(order, order_items, rewards_earned, rewards_redeemed)
 """
 
+import os
 from io import BytesIO
 from decimal import Decimal
 from django.conf import settings
@@ -338,9 +339,6 @@ def generate_invoice_pdf(order, order_items, rewards_earned=0, rewards_redeemed=
         story.append(rewards_banner)
         story.append(Spacer(1, 0.15 * inch))
 
-    qr_path = os.path.join(settings.STATICFILES_DIRS[0], 'images', 'evoGames_QR_Code.png')
-    story.append(RLImage(qr_path, width=1.2*inch, height=1.4*inch))
-
     # FOOTER 
     story.append(HRFlowable(width='100%', thickness=1, color=LGREY, spaceBefore=20))
     story.append(Spacer(1, 6))
@@ -357,6 +355,9 @@ def generate_invoice_pdf(order, order_items, rewards_earned=0, rewards_redeemed=
         ParagraphStyle('FooterItalic', parent=footer_style, fontSize=7,
                        textColor=colors.HexColor('#AAAAAA'))
     ))
+
+    qr_path = os.path.join(settings.STATICFILES_DIRS[0], 'images', 'evoGames_QR_Code.png')
+    story.append(RLImage(qr_path, width=1.2*inch, height=1.4*inch))
 
     # BUILD 
     doc.build(story)
