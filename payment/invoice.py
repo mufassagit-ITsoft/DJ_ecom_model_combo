@@ -12,7 +12,7 @@ Usage:
 
 from io import BytesIO
 from decimal import Decimal
-
+from django.conf import settings
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -22,6 +22,7 @@ from reportlab.platypus import (
     TableStyle, HRFlowable
 )
 from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
+from reportlab.platypus import Image as RLImage
 
 
 # Brand colours (Mario NES palette) 
@@ -336,6 +337,9 @@ def generate_invoice_pdf(order, order_items, rewards_earned=0, rewards_redeemed=
         ]))
         story.append(rewards_banner)
         story.append(Spacer(1, 0.15 * inch))
+
+    qr_path = os.path.join(settings.STATICFILES_DIRS[0], 'images', 'evoGames_QR_Code.png')
+    story.append(RLImage(qr_path, width=1.2*inch, height=1.4*inch))
 
     # FOOTER 
     story.append(HRFlowable(width='100%', thickness=1, color=LGREY, spaceBefore=20))
