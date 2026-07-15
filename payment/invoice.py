@@ -356,7 +356,7 @@ def generate_invoice_pdf(order, order_items, rewards_earned=0, rewards_redeemed=
                        textColor=colors.HexColor('#AAAAAA'))
     ))
 
-    qr_path = os.path.join(settings.STATICFILES_DIRS[0], 'images', 'evoGames_QR_Code.png')
+    qr_path = os.path.join(settings.STATICFILES_DIRS[0], 'media', 'images', 'evoGames_QR_Code.png')
     story.append(RLImage(qr_path, width=1.2*inch, height=1.4*inch))
 
     # BUILD 
